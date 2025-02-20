@@ -1,0 +1,1 @@
+Initial commit za predmet prevajalnike
