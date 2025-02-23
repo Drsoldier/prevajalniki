@@ -2,4 +2,5 @@
 cd ..
 make
 cd prg
-make test
+cmd=test$1
+make $cmd

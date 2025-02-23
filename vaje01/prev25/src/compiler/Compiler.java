@@ -61,7 +61,6 @@ public class Compiler {
 	public static void main(final String[] opts) {
 		try {
 			Report.info("This is Prev25 compiler:");
-
 			// Scan the command line.
 			for (int optc = 0; optc < opts.length; optc++) {
 				if (opts[optc].startsWith("--")) {
@@ -154,7 +153,13 @@ public class Compiler {
 				if (cmdLineOptValues.get("--target-phase").equals("lexan")
 						|| cmdLineOptValues.get("--target-phase").equals("all")) {
 					try (final LexAn lexan = new LexAn()) {
-						while (lexan.lexer.nextToken().getType() != LexAn.LocLogToken.EOF) {
+						LexAn.LocLogToken token = lexan.lexer.nextToken();
+						while (token.getType() != LexAn.LocLogToken.EOF) {
+							Report.info(token.toString());
+								if(token.getType() == 52){
+									throw new Report.Error(token.location().toString() + ": Lexical error: " + token.getText());
+								}
+							token = lexan.lexer.nextToken();
 						}
 					}
 					break;
