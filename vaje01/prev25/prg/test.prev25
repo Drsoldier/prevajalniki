@@ -1,2 +1,7 @@
-typ int 123
+typ int -123
 integer = null
+bool neki
+typ 'a'
+"aaaaaaaaaaa" "\0x41\0x41\0x41"
+typ '\'' typ '\\'
+'\0x20''\0x3A''\0x7E'

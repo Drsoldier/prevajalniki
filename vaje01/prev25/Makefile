@@ -1,15 +1,16 @@
 JAVA		= java
 JAVAC		= javac --release 22 -encoding UTF8
-ANTLR           = org.antlr.v4.Tool
+ANTLR       = org.antlr.v4.Tool
 ANTLRDIR	= lib/antlr-4.13.2-complete.jar
-RM		= 'rm' -fr
+RM			= 'rm' -fr
 FIND		= 'find'
+ENROLLMENT_NUMBER = 63220285
 
 all	:
 	if [ -d src/compiler/phase/lexan ] ; then $(MAKE) -C src/compiler/phase/lexan ; fi
 	if [ -d src/compiler/phase/synan ] ; then $(MAKE) -C src/compiler/phase/synan ; fi
 	$(JAVAC) --module-path $(ANTLRDIR) --source-path src -d bin src/compiler/Compiler.java
-	$(MAKE) -C doc
+	# $(MAKE) -C doc
 	@echo ":-) OK"
 
 .PHONY	: clean
@@ -20,4 +21,19 @@ clean	:
 	if [ -d src/compiler/phase/synan ] ; then $(MAKE) -C src/compiler/phase/synan clean ; fi
 	$(FIND) . -type f -iname "*~" -exec $(RM) {} \;
 	$(FIND) . -type f -iname "*.class" -exec $(RM) {} \;
+	$(FIND) . -type f -iname "*.zip" -delete
 	$(RM) bin
+
+zip: clean
+	@if [ -z "$(NAME)" ]; then \
+		echo "NAME not set! Please set it with \`make zip NAME=<name>\`"; \
+		exit 1; \
+	fi
+	@current_dir=`basename "$$(pwd)"`; \
+	if [ "$$current_dir" == "prev25" ]; then \
+		cd .. && zip -r "$(ENROLLMENT_NUMBER).zip" $$current_dir -x "$$current_dir/lib/antlr-4.13.2-complete.jar" && mv "$(ENROLLMENT_NUMBER).zip" "$$current_dir/$(ENROLLMENT_NUMBER)-$(NAME).zip"; \
+	else \
+		echo ; \
+		echo "ERROR: Your directory isn't named 'prev25'! Aborting..."; \
+	  	exit 1; \
+	fi
