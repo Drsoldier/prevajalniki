@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><?xml-stylesheet type="text/xsl" href="../lib/xsl/lexan.xsl"?><lexan><token kind="CHAR" lexeme="char"><location loc="1.1 - 1.4"/></token><token kind="ASSIGN" lexeme="="><location loc="1.6 - 1.6"/></token><token kind="ERROR" lexeme="'"><location loc="1.8 - 1.8"/></token></lexan>
