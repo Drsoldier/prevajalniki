@@ -27,3 +27,14 @@ options{
 source
 	: defs EOF
 	;
+defs
+	: def defs;
+
+type
+	: BOOL
+	| INT
+	| CHAR
+	| VOID
+	;
+def
+	: TYP IDENTIFIER ASSIGN type;
