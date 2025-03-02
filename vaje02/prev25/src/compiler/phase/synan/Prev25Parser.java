@@ -176,12 +176,25 @@ public class Prev25Parser extends Parser {
 		DefsContext _localctx = new DefsContext(_ctx, getState());
 		enterRule(_localctx, 2, RULE_defs);
 		try {
-			enterOuterAlt(_localctx, 1);
-			{
-			setState(11);
-			def();
-			setState(12);
-			defs();
+			setState(15);
+			_errHandler.sync(this);
+			switch ( getInterpreter().adaptivePredict(_input,0,_ctx) ) {
+			case 1:
+				enterOuterAlt(_localctx, 1);
+				{
+				setState(11);
+				def();
+				setState(12);
+				defs();
+				}
+				break;
+			case 2:
+				enterOuterAlt(_localctx, 2);
+				{
+				setState(14);
+				def();
+				}
+				break;
 			}
 		}
 		catch (RecognitionException re) {
@@ -214,7 +227,7 @@ public class Prev25Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(14);
+			setState(17);
 			_la = _input.LA(1);
 			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 35185311612928L) != 0)) ) {
 			_errHandler.recoverInline(this);
@@ -257,13 +270,13 @@ public class Prev25Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(16);
-			match(TYP);
-			setState(17);
-			match(IDENTIFIER);
-			setState(18);
-			match(ASSIGN);
 			setState(19);
+			match(TYP);
+			setState(20);
+			match(IDENTIFIER);
+			setState(21);
+			match(ASSIGN);
+			setState(22);
 			type();
 			}
 		}
@@ -279,19 +292,22 @@ public class Prev25Parser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\u0004\u00014\u0016\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
+		"\u0004\u00014\u0019\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
 		"\u0002\u0007\u0002\u0002\u0003\u0007\u0003\u0001\u0000\u0001\u0000\u0001"+
-		"\u0000\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0002\u0001\u0002\u0001"+
-		"\u0003\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003\u0000"+
-		"\u0000\u0004\u0000\u0002\u0004\u0006\u0000\u0001\u0002\u0000\u001b\u001d"+
-		"--\u0011\u0000\b\u0001\u0000\u0000\u0000\u0002\u000b\u0001\u0000\u0000"+
-		"\u0000\u0004\u000e\u0001\u0000\u0000\u0000\u0006\u0010\u0001\u0000\u0000"+
-		"\u0000\b\t\u0003\u0002\u0001\u0000\t\n\u0005\u0000\u0000\u0001\n\u0001"+
-		"\u0001\u0000\u0000\u0000\u000b\f\u0003\u0006\u0003\u0000\f\r\u0003\u0002"+
-		"\u0001\u0000\r\u0003\u0001\u0000\u0000\u0000\u000e\u000f\u0007\u0000\u0000"+
-		"\u0000\u000f\u0005\u0001\u0000\u0000\u0000\u0010\u0011\u0005+\u0000\u0000"+
-		"\u0011\u0012\u0005/\u0000\u0000\u0012\u0013\u0005\u0012\u0000\u0000\u0013"+
-		"\u0014\u0003\u0004\u0002\u0000\u0014\u0007\u0001\u0000\u0000\u0000\u0000";
+		"\u0000\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0003\u0001\u0010"+
+		"\b\u0001\u0001\u0002\u0001\u0002\u0001\u0003\u0001\u0003\u0001\u0003\u0001"+
+		"\u0003\u0001\u0003\u0001\u0003\u0000\u0000\u0004\u0000\u0002\u0004\u0006"+
+		"\u0000\u0001\u0002\u0000\u001b\u001d--\u0015\u0000\b\u0001\u0000\u0000"+
+		"\u0000\u0002\u000f\u0001\u0000\u0000\u0000\u0004\u0011\u0001\u0000\u0000"+
+		"\u0000\u0006\u0013\u0001\u0000\u0000\u0000\b\t\u0003\u0002\u0001\u0000"+
+		"\t\n\u0005\u0000\u0000\u0001\n\u0001\u0001\u0000\u0000\u0000\u000b\f\u0003"+
+		"\u0006\u0003\u0000\f\r\u0003\u0002\u0001\u0000\r\u0010\u0001\u0000\u0000"+
+		"\u0000\u000e\u0010\u0003\u0006\u0003\u0000\u000f\u000b\u0001\u0000\u0000"+
+		"\u0000\u000f\u000e\u0001\u0000\u0000\u0000\u0010\u0003\u0001\u0000\u0000"+
+		"\u0000\u0011\u0012\u0007\u0000\u0000\u0000\u0012\u0005\u0001\u0000\u0000"+
+		"\u0000\u0013\u0014\u0005+\u0000\u0000\u0014\u0015\u0005/\u0000\u0000\u0015"+
+		"\u0016\u0005\u0012\u0000\u0000\u0016\u0017\u0003\u0004\u0002\u0000\u0017"+
+		"\u0007\u0001\u0000\u0000\u0000\u0001\u000f";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

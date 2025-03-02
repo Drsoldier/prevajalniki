@@ -28,7 +28,25 @@ source
 	: defs EOF
 	;
 defs
-	: def defs;
+	: def defs
+	| def;
+
+def
+	: TYP IDENTIFIER ASSIGN type
+	| VAR IDENTIFIER COLON type
+	| FUN IDENTIFIER LPARAN syn4;
+
+syn4
+	: RPARAN COLON type neki
+	| COMMA IDENTIFIER COLON type syn4;
+
+neki 
+	: ASSIGN defs_
+	| ;
+
+defs_
+	: def
+	| def COMMA defs_;
 
 type
 	: BOOL
@@ -36,5 +54,3 @@ type
 	| CHAR
 	| VOID
 	;
-def
-	: TYP IDENTIFIER ASSIGN type;
