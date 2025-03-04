@@ -34,23 +34,147 @@ defs
 def
 	: TYP IDENTIFIER ASSIGN type
 	| VAR IDENTIFIER COLON type
-	| FUN IDENTIFIER LPARAN syn4;
+	| FUN IDENTIFIER LPARAN args_ RPARAN syn1
+	| expr;
 
-syn4
-	: RPARAN COLON type neki
-	| COMMA IDENTIFIER COLON type syn4;
-
-neki 
-	: ASSIGN defs_
+args_
+	: IDENTIFIER COLON type COMMA args_
+	| IDENTIFIER COLON type
 	| ;
 
-defs_
-	: def
-	| def COMMA defs_;
+syn1
+	: COLON type neki;
+neki 
+	: ASSIGN stmt (COMMA stmt)*; 
 
-type
+
+stmt_
+	: stmt (COMMA stmt)*
+	| ; 
+
+stmt
+	: whileStmt
+	| ifStmt
+	| letStmt
+	| stmtBase;
+
+whileStmt
+	: WHILE expr stmt_ END;
+
+ifStmt
+	: IF expr THEN stmt_ ifElseStmt;
+
+ifElseStmt
+	: END
+	| ELSE stmt_ END;
+
+letStmt
+	: LET defs IN stmt_ END;
+
+
+stmtBase
+	: expr
+	| expr ASSIGN expr
+	| RETURN expr;
+
+
+exprEntry
+	: expr2nd (OR expr2nd)*;
+
+expr2nd
+	//: exprEnd;
+	: expr3rd (AND expr3rd)*;
+
+
+expr3rd
+	: expr4th (comprOp expr4th)*;
+	//| expr4th;
+
+comprOp
+	: EQU
+	| NEQ
+	| LT
+	| GT
+	| LEQ
+	| GEQ;
+
+
+expr4th
+	: expr5th (additiveExpr expr5th)*;
+additiveExpr
+	: PLUS
+	| MINUS;
+
+expr5th
+	: expr6th (mulOps expr6th)*;
+
+mulOps
+	: MUL
+	| DIV
+	| MOD;
+
+expr6th
+	: (prefixOps) expr7th;
+prefixOps
+	: PLUS
+	| MINUS
+	| EXCL
+	| POW;	
+
+exprs_
+	:(exprEntry COMMA)* exprEntry
+	| ;
+
+expr7th
+	: prim (oper)*;
+oper
+	: POW
+	| DOT IDENTIFIER
+	| LPARAN exprs_ RPARAN;
+
+prim
+	: LPARAN expr RPARAN
+	| LBRACE expr COLON type RBRACE
+	| exprEnd
+	| IDENTIFIER;
+
+
+exprPrio
+	: expr LBRCKT expr RBRCKT
+	| expr LPARAN functionCall;
+
+functionCall
+	: expr COMMA functionCall
+	| RPARAN;
+
+expr
+	: exprEntry;
+
+exprEnd
+	: CONSTCHAR
+	| CONSTNUM
+	| CONSTSTR
+	| BOOL
+	| FALSE
+	| TRUE
+	| NULL
+	| SIZEOF type;
+
+type:syn21;	
+
+syn21
+	: LT IDENTIFIER COLON type (COMMA IDENTIFIER COLON type)* GT
+	| LBRACE IDENTIFIER COLON type (COMMA IDENTIFIER COLON type)* RBRACE
+	| typeOver;
+
+typeOver
+	: LBRCKT CONSTNUM RBRCKT type
+	| POW type
+	| type2;
+
+type2
 	: BOOL
 	| INT
 	| CHAR
 	| VOID
-	;
+	| IDENTIFIER;
