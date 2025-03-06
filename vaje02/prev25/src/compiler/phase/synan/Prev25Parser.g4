@@ -34,13 +34,15 @@ defs
 def
 	: TYP IDENTIFIER ASSIGN type
 	| VAR IDENTIFIER COLON type
-	| FUN IDENTIFIER LPARAN args_ RPARAN syn1
-	| expr;
-
+	| FUN IDENTIFIER LPARAN args_ RPARAN syn1;
+	
 args_
-	: IDENTIFIER COLON type COMMA args_
+	: IDENTIFIER COLON type COMMA args__
 	| IDENTIFIER COLON type
 	| ;
+args__
+	: IDENTIFIER COLON type COMMA args__
+	| IDENTIFIER COLON type;
 
 syn1
 	: COLON type neki;
@@ -49,8 +51,12 @@ neki
 
 
 stmt_
-	: stmt (COMMA stmt)*
-	| ; 
+	: stmt
+	| stmt COMMA stmt__; 
+
+stmt__
+	: stmt
+	| stmt COMMA stmt__;
 
 stmt
 	: whileStmt
@@ -79,16 +85,17 @@ stmtBase
 
 
 exprEntry
-	: expr2nd (OR expr2nd)*;
+	: exprEntry OR expr2nd
+	| expr2nd;
 
 expr2nd
-	//: exprEnd;
-	: expr3rd (AND expr3rd)*;
+	: expr2nd AND expr3rd
+	| expr3rd;
 
 
 expr3rd
-	: expr4th (comprOp expr4th)*;
-	//| expr4th;
+	: expr4th comprOp expr4th
+	| expr4th;
 
 comprOp
 	: EQU
@@ -100,13 +107,16 @@ comprOp
 
 
 expr4th
-	: expr5th (additiveExpr expr5th)*;
+	: expr4th additiveExpr expr5th
+	| expr5th;
+
 additiveExpr
 	: PLUS
 	| MINUS;
 
 expr5th
-	: expr6th (mulOps expr6th)*;
+	: expr5th mulOps expr6th
+	| expr6th;
 
 mulOps
 	: MUL
@@ -114,7 +124,8 @@ mulOps
 	| MOD;
 
 expr6th
-	: (prefixOps) expr7th;
+	: expr7th
+	| prefixOps expr7th;
 prefixOps
 	: PLUS
 	| MINUS
@@ -122,15 +133,22 @@ prefixOps
 	| POW;	
 
 exprs_
-	:(exprEntry COMMA)* exprEntry
-	| ;
+	: exprEntry
+	| exprEntry COMMA exprs__
+	|;
+
+exprs__
+	: exprEntry
+	| exprEntry COMMA exprs__ ;
 
 expr7th
-	: prim (oper)*;
+	: prim (oper)
+	| prim;
 oper
 	: POW
 	| DOT IDENTIFIER
-	| LPARAN exprs_ RPARAN;
+	| LPARAN exprs_ RPARAN
+	| LBRCKT expr RBRCKT;
 
 prim
 	: LPARAN expr RPARAN
@@ -138,10 +156,6 @@ prim
 	| exprEnd
 	| IDENTIFIER;
 
-
-exprPrio
-	: expr LBRCKT expr RBRCKT
-	| expr LPARAN functionCall;
 
 functionCall
 	: expr COMMA functionCall
