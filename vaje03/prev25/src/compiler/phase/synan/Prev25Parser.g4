@@ -24,31 +24,43 @@ options{
     tokenVocab=Prev25Lexer;
 }
 
-source
+source returns [AST.Nodes<FullDefn> ast]
 	: defs EOF
+	{ $ast = new AST.Nodes<AST.FullDefn>($defs.ast);}
 	;
-defs
-	: def defs
-	| def;
+defs returns [List<AST.FullDefn> ast]
+	: def { $ast = new List<AST.FullDefn>(); $ast.addLast($def.ast);}
+	| d=def defs {$ast = $d.ast; $ast.addLast($def.ast);}
+	;
 
-def
-	: TYP IDENTIFIER ASSIGN type
-	| VAR IDENTIFIER COLON type
-	| FUN IDENTIFIER LPARAN args_ RPARAN syn1;
-	
+def returns [AST.Nodes<FullDefn> ast]
+	: TYP IDENTIFIER ASSIGN type {$ast = new AST.TypDefn((LexAn.LocLogToken.getLocation()), $type.name, $type.ast)}
+	| VAR IDENTIFIER COLON type {$ast = new VarDef(loc($VAR, $type.ast), $IDENTIFIER.text(), $type.ast);}
+	| FUN IDENTIFIER LPARAN entryArgs RPARAN COLON type impl=syn1 [$FUN, $ID, $args1.ast, $type.ast] {$ast=implementation.ast;}
+	;
+
+entryArgs 
+	: args 
+	| ;	
+args returns [List<AST.ParDefn> ast]
+	: arg args_ {$ast=$ast2.ast; $ast.addLast($arg.ast);};
+
 args_
-	: IDENTIFIER COLON type COMMA args__
-	| IDENTIFIER COLON type
+	: COMMA args
 	| ;
-args__
-	: IDENTIFIER COLON type COMMA args__
-	| IDENTIFIER COLON type;
+
+arg returns [AST.ParDefn ast]
+	: IDENTIFIER COLON type {$ast = new ParDefn(loc($IDENTIFIER, $type.ast), $IDENTIFIER.text(), $type.ast);};
 
 syn1
-	: COLON type neki
-	| COLON type;
+	: ASSIGN neki
+	| ;
 neki 
-	: ASSIGN stmt (COMMA stmt)*; 
+	: stmt neki2;
+
+neki2
+	: COMMA stmt neki2
+	| ;
 
 
 stmt_
@@ -204,13 +216,13 @@ syn21
 	| typeOver;
 
 typeOver
-	: LBRCKT CONSTNUM RBRCKT type
+	: LBRCKT CONSTNUM RBRCKT type 
 	| POW type
 	| type2;
 
-type2
-	: BOOL
-	| INT
-	| CHAR
-	| VOID
+type2 returns [Type ast]
+	: BOOL {$ast = new AtomType(loc($BOOL), AtomType.Type.BOOL);}
+	| INT {$ast = new AtomType(loc($INT), AtomType.Type.INT);}
+	| CHAR {$ast = new AtomType(loc($CHAR), AtomType.Type.CHAR);}
+	| VOID {$ast = new AtomType(loc($VOID), AtomType.Type.VOID);}
 	| IDENTIFIER;
