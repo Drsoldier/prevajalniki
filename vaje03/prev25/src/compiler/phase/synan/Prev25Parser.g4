@@ -25,14 +25,14 @@ options{
 }
 
 source returns [AST.Nodes<AST.FullDefn> ast]
-	: c=defs EOF {$ast = new AST.Nodes<AST.FullDefn>($c.ast);}
+	: c=defs EOF {$ast = new AST.Nodes<AST.FullDefn>(); $ast.add(0,$c.ast);}
 	;
 defs returns [List<AST.FullDefn> ast]
-	: a=def { $ast = new ArrayList<AST.FullDefn>($a.ast);}
-	| d=def b=defs {$ast = $b.ast; $ast.addAll($d.ast);}
+	: a=def { $ast = new ArrayList<AST.FullDefn>(); $ast.addLast($a.ast);}
+	| d=def b=defs {$ast = $b.ast; $ast.add(0, $d.ast);}
 	;
 
-def returns [AST.Nodes<AST.FullDefn> ast]
+def returns [AST.FullDefn ast]
 	: TYP IDENTIFIER ASSIGN t=type1 {$ast = new AST.TypDefn(loc($TYP, $t.ast), $IDENTIFIER.getText(), $t.ast);}
 	| VAR IDENTIFIER COLON type1 {$ast = new AST.VarDefn(loc($VAR, $type1.ast), $IDENTIFIER.getText(), $type1.ast);}
 	| FUN IDENTIFIER LPARAN args1 RPARAN COLON type1 impl=syn1 [$FUN, $IDENTIFIER, $args1.ast, $type1.ast] {$ast=$impl.ast;}
@@ -194,7 +194,7 @@ exprEnd returns [AST.Expr ast]
 	;
 
 idColonType returns [AST.CompDefn ast]
-	: IDENTIFIER COLON a=type1 {$ast = new AST.NameType(loc($IDENTIFIER, $a.ast), $IDENTIFIER.getText());};
+	: IDENTIFIER COLON a=type1 {$ast = new AST.CompDefn(loc($IDENTIFIER, $a.ast), $IDENTIFIER.getText(), $a.ast);};
 
 typeTuple returns [List<AST.CompDefn> ast]
 	: a=idColonType b=typeTuple_ {$ast = $b.ast; $ast.add(0, $a.ast);}
@@ -203,20 +203,6 @@ typeTuple returns [List<AST.CompDefn> ast]
 
 typeTuple_ returns [List<AST.CompDefn> ast]
 	: COMMA a=typeTuple {$ast = $a.ast;}
-	| {$ast = new ArrayList<AST.CompDefn>();}
-	;
-
-type1s returns [List<AST.CompDefn> ast]
-	: a=nizTypov {$ast = $a.ast;}
-	| {$ast = new ArrayList<AST.CompDefn>();};
-
-nizTypov returns [List<AST.CompDefn> ast]
-	: a=type1 {$ast = new ArrayList<AST.CompDefn>(); $ast.add(0, $a.ast);}
-	| a=type1 b=nizTypov_ {$ast = $b.ast; $ast.add(0, $a.ast);}
-	;
-
-nizTypov_ returns [List<AST.CompDefn> ast]
-	: COMMA a=nizTypov {$ast = $a.ast;} 
 	| {$ast = new ArrayList<AST.CompDefn>();}
 	;
 
