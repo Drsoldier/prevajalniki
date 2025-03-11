@@ -160,7 +160,7 @@ expr7th returns [AST.Expr ast]
 
 
 prim returns [AST.Expr ast]
-	: LPARAN expr RPARAN {$ast = $expr.ast;}
+	: LPARAN expr RPARAN {$ast = $expr.ast; $ast.relocate(loc($LPARAN, $RPARAN));}
 	| LBRACE expr COLON type1 RBRACE {$ast = new AST.CastExpr(loc($LBRACE, $RBRACE), $type1.ast, $expr.ast);}
 	| exprEnd {$ast = $exprEnd.ast;}
 	| IDENTIFIER {$ast = new AST.NameExpr(loc($IDENTIFIER), $IDENTIFIER.getText());}
