@@ -25,7 +25,7 @@ options{
 }
 
 source returns [AST.Nodes<AST.FullDefn> ast]
-	: c=defs EOF {$ast = new AST.Nodes<AST.FullDefn>(); $ast.add(0,$c.ast);}
+	: c=defs EOF {$ast = new AST.Nodes<AST.FullDefn>($c.ast); }
 	;
 defs returns [List<AST.FullDefn> ast]
 	: a=def { $ast = new ArrayList<AST.FullDefn>(); $ast.addLast($a.ast);}
@@ -61,13 +61,13 @@ syn1 [Token fun, Token id, List<AST.ParDefn> args, AST.Type type] returns [AST.F
     ;
 
 stmt_ returns [List<AST.Stmt> ast]
-	: stmt_2
+	: a=stmt_2 {$ast = $a.ast;}
 	| {$ast = new ArrayList<AST.Stmt>();}
     ; 
 
 stmt_2 returns [List<AST.Stmt> ast]
-    : stmt stmt__ {$ast=$stmt__.ast; $ast.add(0, $stmt.ast);}
-    | stmt {$ast=new ArrayList<AST.Stmt>(); $ast.addLast($stmt.ast);}
+    : a=stmt b=stmt__ {$ast=$b.ast; $ast.add(0, $a.ast);}
+    | a=stmt {$ast=new ArrayList<AST.Stmt>(); $ast.addLast($a.ast);}
     ;
 
 stmt__ returns [List<AST.Stmt> ast]
@@ -100,7 +100,7 @@ letStmt returns [AST.LetStmt ast]
 
 
 stmtBase returns [AST.Stmt ast]
-	: a=expr {$ast = new AST.ExprStmt(loc($a.ast), $a.ast);}
+	: a=expr {$ast = new AST.ExprStmt(loc($a.ast, $a.ast), $a.ast);}
 	| aa=expr ASSIGN bb=expr {$ast = new AST.AssignStmt(loc($aa.ast, $bb.ast), $aa.ast, $bb.ast);}
 	| RETURN expr {$ast = new AST.ReturnStmt(loc($RETURN, $expr.ast), $expr.ast);}
     ;

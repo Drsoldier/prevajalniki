@@ -2,5 +2,9 @@
 cd ..
 make
 cd prg
-cmd=test$1
-make $cmd
+
+while [[ -n $1 ]]; do
+    cmd="test$1"
+    make "$cmd"
+    shift
+done
