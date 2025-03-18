@@ -8,6 +8,7 @@ parser grammar Prev25Parser;
 	import compiler.common.report.*;
 	import compiler.phase.lexan.*;
 	import compiler.phase.abstr.*;
+	import compiler.phase.seman.*;
 }
 
 @members {

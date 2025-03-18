@@ -1,0 +1,28 @@
+var a: int
+typ stevilo = int
+
+fun main(param1: int, param2: bool) : void =
+
+    let
+        fun f1() : void =
+            f2()
+        fun f2() : void =
+            f1()
+        fun pomozna(param3: stevilo, param4: crka) : crka =
+            if param1 > 0
+                then return 'a'
+            end,
+            return 'b'
+
+        typ crka = char
+    in
+        pomozna(a, 'c'),
+
+        let
+            var a: char
+            var param1: int
+            var param3: stevilo
+        in
+            param2 = a == 'a' | param1 != param3
+        end
+    end
