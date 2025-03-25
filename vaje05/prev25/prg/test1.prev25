@@ -1,0 +1,17 @@
+
+typ crka = char
+
+var b : crka
+
+typ crka3 = crka
+
+typ ptrCrka = ^char
+#typ arrInt = [1]int
+#typ arrChar = [1]crka
+
+#typ arrPtrInt = [1]^int
+#typ arrArrInt = [1][1]int
+
+
+ #fun k (ooo : int) : void =
+  #  1 + 1
