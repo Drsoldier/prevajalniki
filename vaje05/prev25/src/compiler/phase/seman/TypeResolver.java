@@ -71,10 +71,24 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 
 	@Override
 	public TYP.Type visit(AST.ArrType arrType, Mode arg) {
-		arrType.elemType.accept(this, arg);
 		if(arg == Mode.RESOLVE){
-			TYP.Type tmp = SemAn.isType.get(arrType.elemType);
-			SemAn.isType.put(arrType, tmp);
+			Long c = Long.parseLong(arrType.numElems);
+			TYP.Type tmp = arrType.elemType.accept(this, arg);
+			if(c<1){
+				throw new Report.Error("Number of elements has to be at least 1!");
+			}
+			if(tmp instanceof TYP.VoidType){
+				throw new Report.Error(arrType, "Void array cannot exist!");
+			
+			}/*
+			if(tmp instanceof TYP.NameType){
+				TYP.Type b = (TYP.Type)tmp.actualType();
+				if (b instanceof TYP.VoidType){
+
+				}
+			} */
+			TYP.ArrType neki = new TYP.ArrType(tmp, c);
+			return SemAn.isType.put(arrType, neki);
 		}
 		return null;
 	}
@@ -82,12 +96,20 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 
 	@Override
 	public TYP.Type visit(AST.PtrType ptrType, Mode arg) {
-		if(SemAn.isType.get(ptrType.baseType) == null){
-			Report.warning("WARNING! Pointer is void!");
-		}
+		
 		if(arg == Mode.RESOLVE){
-			TYP.Type tmp = SemAn.isType.get(ptrType.baseType);
-			return SemAn.isType.put(ptrType, tmp);
+			TYP.Type tmp = ptrType.baseType.accept(this, arg);
+			if(tmp instanceof TYP.VoidType){
+				throw new Report.Error(ptrType, "Base pointer cannot be void!");
+			}else if(tmp instanceof TYP.NameType){
+				TYP.Type b = tmp.actualType() ;
+				if(b instanceof TYP.VoidType){
+					throw new Report.Error(ptrType, "Base pointer cannot be void (even if its being cast >:( )!");
+
+				}
+			}
+			TYP.PtrType neki = new TYP.PtrType(tmp);
+			return SemAn.isType.put(ptrType,neki);
 		}
 		return null;
 	}
