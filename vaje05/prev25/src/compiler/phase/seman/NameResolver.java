@@ -61,16 +61,6 @@ public class NameResolver implements AST.FullVisitor<Object, NameResolver.Mode> 
 		return null;
 	}
 
-    private AST.Defn resolve(String name, AST.Node node) {
-		try{
-    		SemAn.defAt.put(node, symbTable.fnd(name));
-
-		}catch(NameResolver.SymbTable.CannotFndNameException e){
-			throw new Report.Error(node.location(), "Ne najdem declerationa z imenom:" + name);
-		}
-		return null;
-	}
-
 	/** The symbol table. */
 	private SymbTable symbTable = new SymbTable();
 
