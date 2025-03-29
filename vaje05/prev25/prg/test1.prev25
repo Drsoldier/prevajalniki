@@ -1,34 +1,15 @@
-####    TYPE DEFINITION    ####
-##  BASE TYPE  ##
-typ stevilo = int
-typ crka = char
-typ logicna = bool
-typ praznina = void
-
-
-##  POINTER TYPE  ##
-typ ptrInt = ^int
-typ ptrChar = ^char
-typ ptrBool = ^bool
-typ ptrCrka = ^crka
-
-typ ptrPtrInt = ^^int
-typ ptrPtrStevilo = ^^stevilo
-typ ptrPtrIntIndirect = ^ptrInt
-typ ptrArrInt = ^[1]int
-typ ptrArrIntIndirect = ^[1]stevilo
-typ ptrArrArrInt = ^[1][1]int
-typ ptrArrArrIntIndirect = ^[1]arrInt
-
-# typ ptrVoid = ^void #ERR1: Void pointer
-#typ ptrPraznina = ^praznina #ERR2: Indirect void pointer
-
-##  ARRAY TYPE ##
-typ arrInt = [1]int
-typ arrChar = [1]char
-typ arrBool = [1]bool
-typ arrLogicna = [1]logicna
-
-#typ arrVoid = [1]void #ERR3: Void array
-#typ arrPraznina = [1]praznina #ERR4: Indirect void array
-#typ arrTooSmall = [0]int #ERR5: Too small array size
+var t : int
+typ b = bool
+typ d = <o : int, p : int>
+var kk : d
+var ll : <l : int, oo:int>
+fun k (a : int, b : int, aa : int) : void = 
+    t = 1+1,
+    t = 'c',
+    ^t,
+    t,
+    +t,
+    t+(-t),
+    d.o,
+    {t : bool},
+    ll.l
