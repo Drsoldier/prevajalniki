@@ -2298,7 +2298,7 @@ public class Prev25Parser extends Parser {
 				{
 				setState(440);
 				((ExprEndContext)_localctx).FALSE = match(FALSE);
-				((ExprEndContext)_localctx).ast =  new AST.AtomExpr(loc(((ExprEndContext)_localctx).FALSE), AST.AtomExpr.Type.CHAR, ((ExprEndContext)_localctx).FALSE.getText());
+				((ExprEndContext)_localctx).ast =  new AST.AtomExpr(loc(((ExprEndContext)_localctx).FALSE), AST.AtomExpr.Type.BOOL, ((ExprEndContext)_localctx).FALSE.getText());
 				}
 				break;
 			case TRUE:
@@ -2306,7 +2306,7 @@ public class Prev25Parser extends Parser {
 				{
 				setState(442);
 				((ExprEndContext)_localctx).TRUE = match(TRUE);
-				((ExprEndContext)_localctx).ast =  new AST.AtomExpr(loc(((ExprEndContext)_localctx).TRUE), AST.AtomExpr.Type.CHAR, ((ExprEndContext)_localctx).TRUE.getText());
+				((ExprEndContext)_localctx).ast =  new AST.AtomExpr(loc(((ExprEndContext)_localctx).TRUE), AST.AtomExpr.Type.BOOL, ((ExprEndContext)_localctx).TRUE.getText());
 				}
 				break;
 			case NULL:

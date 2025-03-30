@@ -1,15 +1,32 @@
 var t : int
-typ b = bool
+#typ b = bool
+typ praznina = void
 typ d = <o : int, p : int>
+typ a = bool
+typ fffffffff = (int, int, int) : int
+#var kk : d
+#var t2 : <p:int, o:int>
+var ll : <l:int, l2:int>
+var ppppp : () : void
 var kk : d
-var ll : <l : int, oo:int>
-fun k (a : int, b : int, aa : int) : void = 
+fun k () : void = 
     t = 1+1,
-    t = 'c',
-    ^t,
+    {t : char} = 'c',
+    (^t)^,
     t,
+    !true,
     +t,
-    t+(-t),
-    d.o,
-    {t : bool},
-    ll.l
+    t*(-t),
+    true | false,
+    {t : void},
+    ll.l,
+    kk.o,
+    if false then
+        return 1
+    end
+    
+
+fun main () : int = 
+    ppppp = k,
+    ppppp(),
+    return 0

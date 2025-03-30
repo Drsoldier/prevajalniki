@@ -99,7 +99,7 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 		
 		if(arg == Mode.RESOLVE){
 			TYP.Type tmp = ptrType.baseType.accept(this, arg);
-			if(tmp.actualType() == TYP.VoidType.type){
+			if(tmp.actualType() == TYP.VoidType.type ){
 				throw new Report.Error(ptrType, "Base pointer cannot be void!");
 			/*}else if(tmp instanceof TYP.NameType){
 				//TYP.Type b = tmp.actualType() ;
@@ -199,8 +199,8 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 			}else if(b instanceof TYP.ArrType){
 				throw new Report.Error(funType, "Return was of type array");
 			}
-			var l = new TYP.FunType(a, b);
-			return SemAn.isType.put(funType, l);
+			TYP.FunType newFunType = new TYP.FunType(a, b);
+			return SemAn.isType.put(funType, newFunType);
 		}
 		return null;
 	}
@@ -229,22 +229,121 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 
 	@Override
 	public TYP.Type visit(AST.VarDefn varDefn, Mode arg) {
-		varDefn.type.accept(this, arg);
 		if(arg==Mode.RESOLVE){
+			TYP.Type b = varDefn.type.accept(this, arg);
 			TYP.Type a = SemAn.isType.get(varDefn.type);
-			return SemAn.ofType.put(varDefn, a);
+			return SemAn.ofType.put(varDefn, b);
 		}
 		return null;
 	}
 
+
+	public boolean doesStmtHaveReturn(Nodes<AST.Stmt> stmtList, TYP.Type a){
+		Report.info("cccc");
+		for(AST.Stmt stmt : stmtList){
+			if(stmt instanceof AST.LetStmt){
+				AST.LetStmt castStmt = (AST.LetStmt)stmt;
+				return (doesStmtHaveReturn(castStmt.stmts, a));
+			}
+			if(stmt instanceof AST.ExprStmt){
+				return false;
+			}
+			if(stmt instanceof AST.AssignStmt){
+				return false;
+			}
+			if(stmt instanceof AST.IfThenStmt){
+				AST.IfThenStmt castStmt = (AST.IfThenStmt)stmt;
+				return (doesStmtHaveReturn(castStmt.thenStmt, a));
+			}
+			if(stmt instanceof AST.IfThenElseStmt){
+				AST.IfThenElseStmt castStmt = (AST.IfThenElseStmt)stmt;
+				return (doesStmtHaveReturn(castStmt.thenStmt, a) || doesStmtHaveReturn(castStmt.elseStmt, a));
+			}
+			if(stmt instanceof AST.ReturnStmt){
+				AST.ReturnStmt castStmt = (AST.ReturnStmt)stmt;
+				TYP.Type retValue = castStmt.accept(this, Mode.RESOLVE);
+				if(retValue.actualType() == a.actualType()){
+
+					return true;
+				}
+				return false;
+			}
+			if(stmt instanceof AST.WhileStmt){
+				AST.WhileStmt castStmt = (AST.WhileStmt)stmt;
+				return doesStmtHaveReturn(castStmt.stmts, a);
+			}
+			
+		}
+
+		return false;
+	}
+	public boolean doesStmtHaveReturn(AST.Stmt stmt, TYP.Type a){
+		if(stmt instanceof AST.LetStmt){
+			AST.LetStmt castStmt = (AST.LetStmt)stmt;
+			return (doesStmtHaveReturn(castStmt.stmts, a));
+		}
+		if(stmt instanceof AST.ExprStmt){
+			return false;
+		}
+		if(stmt instanceof AST.AssignStmt){
+			return false;
+		}
+		if(stmt instanceof AST.IfThenElseStmt){
+			AST.IfThenElseStmt castStmt = (AST.IfThenElseStmt)stmt;
+			return (doesStmtHaveReturn(castStmt.thenStmt, a) || doesStmtHaveReturn(castStmt.elseStmt, a));
+		}else if(stmt instanceof AST.IfThenStmt){
+			Report.info("hallo");
+			AST.IfThenStmt castStmt = (AST.IfThenStmt)stmt;
+			return (doesStmtHaveReturn(castStmt.thenStmt, a));
+		}
+		
+		if(stmt instanceof AST.ReturnStmt){
+			Report.info("aaaaaaaaaa");
+			return true;
+		}
+		if(stmt instanceof AST.WhileStmt){
+			AST.WhileStmt castStmt =(AST.WhileStmt)stmt;
+			return doesStmtHaveReturn(castStmt.stmts, a);
+		}
+
+
+		return false;
+	}
+
 	@Override
 	public TYP.Type visit(AST.DefFunDefn defFunDefn, Mode arg) {
+		boolean hasReturn = false;
+		boolean noError = false;
+		TYP.Type returnType = null;
 		defFunDefn.pars.accept(this, arg);
 		if(arg == Mode.DECLARE){
 		}
 		if (arg == Mode.RESOLVE){
-			defFunDefn.stmts.accept(this, arg);
 			TYP.Type a = (defFunDefn.type).accept(this, arg);
+			for (var stmt : defFunDefn.stmts){
+				if(doesStmtHaveReturn(stmt, a)){
+					Report.warning("FFF");
+					hasReturn = true;
+					returnType = stmt.accept(this, arg);
+					if(returnType != null){
+						Report.warning(returnType.toString());
+					}
+					//if(returnType instanceof a){
+						noError = true;
+					//}
+
+				
+				}
+			}
+			if(!hasReturn)
+				throw new Report.Error(defFunDefn,"Function should have a return statement");
+
+			if(!noError){
+				throw new Report.Error(defFunDefn,"Function returns wrong type");
+			}
+
+			defFunDefn.stmts.accept(this, arg);
+			
 			return SemAn.ofType.put(defFunDefn, a);
 		}
 		return null;
@@ -252,9 +351,7 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 
 	@Override
 	public TYP.Type visit(AST.ExtFunDefn extFunDefn, Mode arg) {
-		extFunDefn.pars.accept(this, arg);
-		if(arg == Mode.DECLARE){
-		}
+		
 		if (arg == Mode.RESOLVE){
 
 			TYP.Type a = (extFunDefn.type).accept(this, arg);
@@ -284,264 +381,4 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 		return null;
 	}
 
-	// ----- Expressions -----
-
-	@Override
-	public TYP.Type visit(AST.ArrExpr arrExpr, Mode arg) {
-		if(arg == Mode.RESOLVE){
-			TYP.Type a = SemAn.defAt.get(arrExpr.arrExpr).accept(this, arg);
-			TYP.Type b = SemAn.defAt.get(arrExpr.idx).accept(this, arg);
-			if(a instanceof TYP.ArrType ){
-				if(b.actualType() == TYP.IntType.type){
-					return SemAn.isType.put(arrExpr, a);
-				}else{
-					throw new Report.Error(arrExpr, "Not an int");
-
-				}
-
-			}else{
-				throw new Report.Error(arrExpr, "Not an array");
-			}
-		}
-		return null;
-	}
-
-	@Override
-	public TYP.Type visit(AST.AtomExpr atomExpr, Mode arg) {
-		if(arg==Mode.RESOLVE){
-			TYP.Type temp;
-			switch(atomExpr.type){
-				case CHAR:
-					temp = TYP.CharType.type;
-					break;
-				case BOOL:
-					temp = TYP.BoolType.type;
-					break;
-				case INT:
-					temp = TYP.IntType.type;
-					break;
-				case PTR:
-					temp = TYP.PtrType.type;
-					break;
-				case STR:
-					temp = TYP.PtrType.type;
-					break;
-				default:
-					temp = null;
-					break;
-			}
-			return SemAn.ofType.put(atomExpr, temp);
-		}
-		
-		return null;
-	}
-
-	@Override
-	public TYP.Type visit(AST.BinExpr binExpr, Mode arg) {
-		
-		if(arg == Mode.RESOLVE){
-			TYP.Type a = binExpr.fstExpr.accept(this, arg);
-			TYP.Type b = binExpr.sndExpr.accept(this, arg);
-			if(a.actualType() == b.actualType()){
-				
-				if(b.actualType() == TYP.BoolType.type){
-
-					switch(binExpr.oper){
-						case OR:
-
-						case AND:
-							return SemAn.ofType.put(binExpr, TYP.BoolType.type);
-						default:
-					}
-				}else if (b.actualType() == TYP.IntType.type){
-					switch(binExpr.oper){
-						case MUL:
-						case DIV:
-						case MOD:
-						case ADD:
-						case SUB:
-							return SemAn.ofType.put(binExpr, TYP.IntType.type);
-						default:
-					}
-				}else if(b.actualType() == TYP.PtrType.type ||b.actualType() == TYP.CharType.type){
-					switch(binExpr.oper){
-						case EQU:
-						case NEQ:
-						case LTH:
-						case GTH:
-						case LEQ:
-						case GEQ:	
-							return SemAn.ofType.put(binExpr, TYP.BoolType.type);
-						default:
-					}
-				}
-				else{
-					throw new Report.Error(binExpr, "Tyes should be either int or bool");
-				}
-
-				return SemAn.ofType.put(binExpr, a);
-
-			}else{
-				throw new Report.Error(binExpr, "Cannot coerce " + a.actualType().toString() + " into " + b.actualType().toString());
-			}
-		}
-		return null;
-		
-		/*if(!(a.actualType() == b.actualType())){
-			throw new Report.Error("Coersion not implemented");
-		}
-		if(a.actualType() instanceof TYP.IntType){
-
-		}*/
-	}
-
-	@Override
-	public TYP.Type visit(AST.CallExpr callExpr, Mode arg) {
-		if(arg == Mode.RESOLVE){
-
-		}
-		
-		return null;
-	}
-
-	@Override
-	public TYP.Type visit(AST.CastExpr castExpr, Mode arg) {
-		castExpr.type.accept(this, arg);
-		castExpr.expr.accept(this,arg);
-		if(arg==Mode.RESOLVE){
-			SemAn.defAt.get(castExpr.expr).accept(this, arg);
-			TYP.Type b = SemAn.isType.get(castExpr.type);
-			if(b.actualType() == TYP.VoidType.type)
-				throw new Report.Error(castExpr, "Cannot cast to void");
-
-			return SemAn.ofType.put(castExpr, b);
-		}
-		
-
-		return null;
-	}
-
-	@Override
-	public TYP.Type visit(AST.CompExpr compExpr, Mode arg) {
-		TYP.Type b = compExpr.recExpr.accept(this, arg);
-		if(arg==Mode.RESOLVE){
-			TYP.Type a = SemAn.ofType.get(compExpr);
-			if(a == null){
-				Report.warning("fuck");
-				if(b!=null)
-					Report.info("ni null");
-				return SemAn.ofType.put(compExpr, TYP.VoidType.type);	
-			}
-			return SemAn.ofType.put(compExpr, a);
-		}
-		return null;
-	}
-
-	@Override
-	public TYP.Type visit(AST.NameExpr nameExpr, Mode arg) {
-		if(arg == Mode.RESOLVE){
-			TYP.Type a = SemAn.defAt.get(nameExpr).accept(this, arg);;
-			return SemAn.ofType.put(nameExpr, a);
-		}
-		return null;
-	}
-
-	@Override
-	public TYP.Type visit(AST.PfxExpr pfxExpr, Mode arg) {
-		if(arg==Mode.RESOLVE){
-			TYP.Type temp;
-			TYP.Type tmp2 = pfxExpr.subExpr.accept(this, arg);
-			switch(pfxExpr.oper){
-				case ADD:
-					temp = TYP.IntType.type;
-					if(tmp2.actualType() != TYP.IntType.type){
-						throw new Report.Error(pfxExpr,"Unable to add on a non int type");
-					}
-					break;
-				case SUB:
-					temp = TYP.IntType.type;
-					if(tmp2.actualType() != TYP.IntType.type){
-						throw new Report.Error(pfxExpr,"Unable to subtract from a non int type");
-					}
-					break;
-				case NOT:
-					temp = TYP.BoolType.type;
-					if(tmp2.actualType() != TYP.BoolType.type){
-						throw new Report.Error(pfxExpr,"Unable to negate non boolean statements");
-					}
-					break;
-				case PTR:
-					temp = new TYP.PtrType(tmp2);
-					if(tmp2.actualType() == TYP.VoidType.type){
-						throw new Report.Error(pfxExpr,"Unable to make a pointer out of a void type");
-					}
-					break;
-				default:
-					temp = null;
-					break;
-			}
-			if(tmp2.actualType() != temp.actualType()){
-				//throw new Report.Error("Coercion failed");
-			}
-			return SemAn.ofType.put(pfxExpr, temp);
-		}
-		return null;
-	}
-
-	@Override
-	public TYP.Type visit(AST.SfxExpr sfxExpr, Mode arg) {
-		if(arg == Mode.RESOLVE){
-			TYP.Type temp = sfxExpr.subExpr.accept(this, arg);
-			if(temp.actualType() == TYP.VoidType.type){
-				throw new Report.Error(sfxExpr,"Unable to dereference a null pointer");
-			}
-			return SemAn.ofType.put(sfxExpr, temp);
-		}
-		return null;
-	}
-
-	@Override
-	public TYP.Type visit(AST.SizeExpr sizeExpr, Mode arg) {
-		return null;
-	}
-
-
-	// ----- Statements -----
-	/*
-	@Override
-	public TYP.Type visit(AST.LetStmt letStmt, Mode arg) {
-		return null;
-	}
-
-	@Override
-	public TYP.Type visit(AST.AssignStmt assignStmt, Mode arg) {
-		return null;
-	}
-	*/
-	@Override
-	public TYP.Type visit(AST.ExprStmt callStmt, Mode arg) {
-		callStmt.expr.accept(this, arg);
-		return null;
-	}
-
-	/*@Override
-	public TYP.Type visit(AST.IfThenStmt ifThenStmt, Mode arg) {
-		return null;
-	}
-
-	@Override
-	public TYP.Type visit(AST.IfThenElseStmt ifThenElseStmt, Mode arg) {
-		return null;
-	}
-
-	@Override
-	public TYP.Type visit(AST.ReturnStmt returnStmt, Mode arg) {
-		return null;
-	}
-
-	@Override
-	public TYP.Type visit(AST.WhileStmt whileStmt, Mode arg) {
-		return null;
-	}*/
-	
 }

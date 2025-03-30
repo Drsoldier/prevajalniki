@@ -189,8 +189,8 @@ exprEnd returns [AST.Expr ast]
 	: CONSTCHAR {$ast = new AST.AtomExpr(loc($CONSTCHAR), AST.AtomExpr.Type.CHAR, $CONSTCHAR.getText());}
 	| CONSTNUM {$ast = new AST.AtomExpr(loc($CONSTNUM), AST.AtomExpr.Type.INT, $CONSTNUM.getText());}
 	| CONSTSTR {$ast = new AST.AtomExpr(loc($CONSTSTR), AST.AtomExpr.Type.STR, $CONSTSTR.getText());}
-	| FALSE {$ast = new AST.AtomExpr(loc($FALSE), AST.AtomExpr.Type.CHAR, $FALSE.getText());}
-	| TRUE {$ast = new AST.AtomExpr(loc($TRUE), AST.AtomExpr.Type.CHAR, $TRUE.getText());}
+	| FALSE {$ast = new AST.AtomExpr(loc($FALSE), AST.AtomExpr.Type.BOOL, $FALSE.getText());}
+	| TRUE {$ast = new AST.AtomExpr(loc($TRUE), AST.AtomExpr.Type.BOOL, $TRUE.getText());}
 	| NULL {$ast = new AST.AtomExpr(loc($NULL), AST.AtomExpr.Type.PTR, "0");}
 	;
 
