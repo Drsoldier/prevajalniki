@@ -19,7 +19,53 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 	public TypeChecker() {
 	}
 	
+	// ------- Functions ----------
+	/*@Override
+	public TYP.Type visit(AST.DefFunDefn defFunDefn, Mode arg) {
+		Report.info("Checking function "+defFunDefn.name);
+		boolean noError = false;
+		TYP.Type returnType = null;
+		defFunDefn.pars.accept(this, arg);
+		
+		TYP.Type a = SemAn.ofType.get((defFunDefn));
+		defFunDefn.stmts.accept(this, arg);
+		Report.info(a.toString());
+		for (var stmt : defFunDefn.stmts){
+			if(doesStmtHaveReturn(stmt, a)){
+				//Report.warning("FFF");
+				noError = true;
+				returnType = SemAn.ofType.get((stmt));
 
+				
+			
+			}
+		}
+
+		if(!noError){
+			throw new Report.Error(defFunDefn,"Function returns wrong type");
+		}
+
+		return SemAn.ofType.put(defFunDefn, a);
+	}*/
+
+	@Override
+	public TYP.Type visit(AST.PtrType ptrType, Mode arg) {
+		TYP.Type tmp = SemAn.isType.get(ptrType);
+		if(tmp instanceof TYP.NameType){
+			TYP.Type b = tmp; //SemAn.isType.get(ptrType.baseType);
+			if(b instanceof TYP.NameType){
+				while(b instanceof TYP.NameType){
+					b = b.actualType();
+				}
+			}
+			
+			if(b instanceof TYP.VoidType){
+				throw new Report.Error(ptrType, "Base pointer cannot be void (even if its being cast >:( )!");
+			}
+			
+		}
+		return null;
+	}
 	// ----- Expressions -----
 
 	@Override
@@ -240,10 +286,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		if(temp.actualType() == TYP.VoidType.type){
 			throw new Report.Error(sfxExpr,"Unable to dereference a null pointer");
 		}
-		if (temp instanceof TYP.PtrType){
-			Report.info("pointer type");
-			
-		}
+		
 		
 		return SemAn.ofType.put(sfxExpr, temp);
 		
@@ -269,7 +312,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 
 		
 		if(src instanceof TYP.FunType){
-			src = ((TYP.FunType)src).resType;
+			throw new Report.Error(assignStmt, "Left assignment cannot be a function"); 
 		}if(dst instanceof TYP.FunType){
 			dst = ((TYP.FunType)dst).resType;
 		}
@@ -329,6 +372,105 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		return null;
 	}
 		
-	
+	public boolean doesStmtHaveReturn(Nodes<AST.Stmt> stmtList, TYP.Type a){
+		//Report.info(a.toString());
+
+		//Report.info("cccc");
+		for(AST.Stmt stmt : stmtList){
+			if(stmt instanceof AST.LetStmt){
+				AST.LetStmt castStmt = (AST.LetStmt)stmt;
+				return (doesStmtHaveReturn(castStmt.stmts, a));
+			}
+			if(stmt instanceof AST.ExprStmt){
+				return false;
+			}
+			if(stmt instanceof AST.AssignStmt){
+				return false;
+			}
+			if(stmt instanceof AST.IfThenStmt){
+				AST.IfThenStmt castStmt = (AST.IfThenStmt)stmt;
+				return (doesStmtHaveReturn(castStmt.thenStmt, a));
+			}
+			if(stmt instanceof AST.IfThenElseStmt){
+				AST.IfThenElseStmt castStmt = (AST.IfThenElseStmt)stmt;
+				return (doesStmtHaveReturn(castStmt.thenStmt, a) || doesStmtHaveReturn(castStmt.elseStmt, a));
+			}
+			if(stmt instanceof AST.ReturnStmt){
+				AST.ReturnStmt castStmt = (AST.ReturnStmt)stmt;
+				TYP.Type retValue = castStmt.accept(this, Mode.RESOLVE);
+				TYP.Type b = SemAn.ofType.get(castStmt.retExpr);
+				if(a == null){
+					Report.warning("fuck");
+				}
+				if(b == null){
+					Report.warning("b is null");
+
+				}else if(retValue == null){
+					Report.warning("retValue is null");
+
+				}
+				if(b != null && retValue != null)
+					Report.info("This is within the list statement: retValue="+retValue.toString() + " b=" + b.toString() + " a=" + a.toString());
+				/*if(b != null){
+					Report.info(b.toString());
+					if(b.actualType() == a.actualType())
+						return true;
+				}*/
+				if(retValue != null){
+				if(retValue.actualType() == a.actualType())
+					Report.warning("does it actually work?");
+					return true;
+				}	
+			
+				return false;
+			}
+			if(stmt instanceof AST.WhileStmt){
+				AST.WhileStmt castStmt = (AST.WhileStmt)stmt;
+				return doesStmtHaveReturn(castStmt.stmts, a);
+			}
+			
+		}
+
+		return false;
+	}
+	public boolean doesStmtHaveReturn(AST.Stmt stmt, TYP.Type a){
+
+		if(stmt instanceof AST.LetStmt){
+			AST.LetStmt castStmt = (AST.LetStmt)stmt;
+			return (doesStmtHaveReturn(castStmt.stmts, a));
+		}
+		if(stmt instanceof AST.ExprStmt){
+			return false;
+		}
+		if(stmt instanceof AST.AssignStmt){
+			return false;
+		}
+		if(stmt instanceof AST.IfThenElseStmt){
+			AST.IfThenElseStmt castStmt = (AST.IfThenElseStmt)stmt;
+			return (doesStmtHaveReturn(castStmt.thenStmt, a) || doesStmtHaveReturn(castStmt.elseStmt, a));
+		}else if(stmt instanceof AST.IfThenStmt){
+			//Report.info("hallo");
+			AST.IfThenStmt castStmt = (AST.IfThenStmt)stmt;
+			return (doesStmtHaveReturn(castStmt.thenStmt, a));
+		}
+		
+		if(stmt instanceof AST.ReturnStmt){
+			AST.ReturnStmt castStmt = (AST.ReturnStmt)stmt;
+			TYP.Type retValue = castStmt.accept(this, Mode.RESOLVE);
+			TYP.Type b = SemAn.ofType.get(castStmt.retExpr);
+			if(b != null && retValue != null)
+				Report.info("This is within the singular statement: retValue="+retValue.toString() + " b=" + b.toString());
+			if(b.actualType().equals(a.actualType()))
+				return true;
+			return false;
+		}
+		if(stmt instanceof AST.WhileStmt){
+			AST.WhileStmt castStmt =(AST.WhileStmt)stmt;
+			return doesStmtHaveReturn(castStmt.stmts, a);
+		}
+
+
+		return false;
+	}
 
 }
