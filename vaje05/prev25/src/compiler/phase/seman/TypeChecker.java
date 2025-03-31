@@ -14,9 +14,10 @@ import compiler.phase.seman.NameResolver.*;
  * @author bostjan.slivnik@fri.uni-lj.si
  */
 public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
-
+	public int stNod;
 	/** Constructs a new name checker. */
 	public TypeChecker() {
+		stNod = TypeResolver.stNod;
 	}
 	
 	// ------- Functions ----------
@@ -116,6 +117,26 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 	}
 
 	@Override
+	public TYP.Type visit(AST.StrType strType, Mode arg) {
+		TYP.Type trenList = SemAn.isType.get(strType);
+		LinkedList<TYP.Type> typelist = new LinkedList<TYP.Type>();
+		for (Node comp : strType.comps) {
+			TYP.Type b = comp.accept(this, arg);
+			if(b instanceof TYP.VoidType){
+				throw new Report.Error(strType, "Components cannot be void");
+			}
+
+			
+
+			typelist.addLast(b);
+		}
+		
+		var typ = new TYP.StrType(typelist);
+
+		return SemAn.isType.put(strType, typ);
+	}
+
+	@Override
 	public TYP.Type visit(AST.BinExpr binExpr, Mode arg) {
 		/*
 		TYP.Type a = binExpr.fstExpr.accept(this, arg);
@@ -134,8 +155,24 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		
 		if (a.actualType().equals(b.actualType()) && !(a instanceof TYP.RecType)) {
 			
-			if(b instanceof TYP.BoolType || b instanceof TYP.IntType || b instanceof TYP.CharType || b instanceof TYP.PtrType){
+			if(b instanceof TYP.BoolType || b instanceof TYP.IntType || b instanceof TYP.CharType || b instanceof TYP.PtrType || b instanceof TYP.NameType || b instanceof TYP.VoidType){
+				try{
+					while(b instanceof TYP.NameType){
+					b = b.actualType(); 
+					}
 
+				}catch(Exception e){
+
+				}
+				try{
+					while(a instanceof TYP.NameType){
+						a = a.actualType();
+					}
+
+				}catch(Exception e){
+
+				}
+				Report.info(a.toString() + " " + b.toString());
 				switch(binExpr.oper){
 					case OR:
 					case AND:
@@ -177,9 +214,14 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		ArrayList<TYP.Type> parTypes = new ArrayList<TYP.Type>();
 		TYP.Type funType = callExpr.funExpr.accept(this, arg);
 		for (AST.Expr a : callExpr.argExprs)
-		parTypes.add(a.accept(this, arg));
-		if (!(funType instanceof TYP.FunType))
+			parTypes.add(a.accept(this, arg));
+		Report.info(funType.actualType().toString());
+		while(funType instanceof TYP.NameType){
+			funType = funType.actualType();
+		}
+		if (!(funType instanceof TYP.FunType)){
 			throw new Report.Error(callExpr, "Function expression must be of type function");
+		}
 		if (parTypes.size() != ((TYP.FunType) funType).parTypes.size())
 			throw new Report.Error(callExpr, "Function call has wrong number of arguments");
 		return SemAn.ofType.put(callExpr, ((TYP.FunType) funType).resType);
@@ -286,6 +328,9 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		if(temp.actualType() == TYP.VoidType.type){
 			throw new Report.Error(sfxExpr,"Unable to dereference a null pointer");
 		}
+		if(temp instanceof TYP.PtrType a){
+			return SemAn.ofType.put(sfxExpr, a.baseType);
+		}
 		
 		
 		return SemAn.ofType.put(sfxExpr, temp);
@@ -305,6 +350,61 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		return null;
 	}*/
 
+	public boolean compTypes(TYP.Type a, TYP.Type b){
+		if(a instanceof TYP.NameType){
+			a = a.actualType();
+		}
+		if(b instanceof TYP.NameType){
+			b = b.actualType();
+		}
+		if(a instanceof TYP.RecType a2 && b instanceof TYP.RecType b2){
+			boolean neki = true;
+			if(a2.compTypes.size() != b2.compTypes.size())
+				return false;
+				
+			
+			for(int i = 0; i<a2.compTypes.size(); i++){
+				var prviComp = a2.compTypes.get(i);
+				var drugComp = b2.compTypes.get(i);
+				if(prviComp instanceof TYP.NameType){
+					prviComp = prviComp.actualType();
+				}
+				if(drugComp instanceof TYP.NameType){
+					drugComp = drugComp.actualType();
+				}
+
+				if(!compTypes(prviComp, drugComp)){
+					neki = false;
+					break;
+				};
+
+
+			}
+			return neki;
+		}else if(a instanceof TYP.PtrType a2 && b instanceof TYP.PtrType b2){
+			if((a2.baseType.actualType() == TYP.VoidType.type)){
+				return false;
+			}
+			if(b2.baseType.actualType() == TYP.VoidType.type){
+				return true;
+
+			}
+			return compTypes(a2.baseType, b2.baseType);
+		}else if(a instanceof TYP.IntType && b instanceof TYP.IntType){
+			return true;
+		}else if(a instanceof TYP.BoolType && b instanceof TYP.BoolType){
+			return true;
+		}else if(a instanceof TYP.CharType && b instanceof TYP.CharType){
+			return true;
+		}else if(b instanceof TYP.FunType a2){
+			return compTypes(a, a2.resType);
+		}else if(a instanceof TYP.ArrType a2 && b instanceof TYP.ArrType b2){
+			return compTypes(a2.elemType, b2.elemType);
+		}
+
+		return false;
+	}
+
 	@Override
 	public TYP.Type visit(AST.AssignStmt assignStmt, Mode arg) {
 		TYP.Type src = assignStmt.srcExpr.accept(this, arg);
@@ -316,14 +416,26 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		}if(dst instanceof TYP.FunType){
 			dst = ((TYP.FunType)dst).resType;
 		}
+
 		/*if(src != null){
 			Report.info(src.toString());
 		}if(dst != null){
 			Report.info(dst.toString());
 		}*/
-
-		if(src.actualType() != dst.actualType()){
-			throw new Report.Error(assignStmt, "Types do not match");
+		if(src != null && dst != null){
+			if(src instanceof TYP.PtrType a && dst instanceof TYP.PtrType b){
+				if (a.baseType instanceof TYP.NameType){
+					var d = a.baseType.actualType();
+					Report.info(d.toString());
+					if(d instanceof TYP.VoidType)
+						return null;
+					else
+						throw new Report.Error(assignStmt, "Types do not match");
+				}
+			}else if(!(src.toString().equals(dst.toString()))){
+				Report.info("'"+src.toString() + "' '" + dst.toString() + "'");
+				throw new Report.Error(assignStmt, "Types do not match");
+			}
 		}
 		return null;
 	}
@@ -372,6 +484,15 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		return null;
 	}
 		
+
+	public boolean traverseDaTree(Types<TYP.Type> list, int stKorakovLeft){
+		if(stKorakovLeft < 1){
+
+		}
+		return true;
+	}
+
+
 	public boolean doesStmtHaveReturn(Nodes<AST.Stmt> stmtList, TYP.Type a){
 		//Report.info(a.toString());
 

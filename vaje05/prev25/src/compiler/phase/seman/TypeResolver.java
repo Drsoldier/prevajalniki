@@ -15,16 +15,18 @@ import compiler.phase.seman.NameResolver.*;
  * @author bostjan.slivnik@fri.uni-lj.si
  */
 public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
-
+	static public int stNod=0;
+	public static HashMap<Integer, HashMap<String,AST.Node>> vsiRecType;
 	/** Constructs a new name resolver. */
 	public TypeResolver() {
+		vsiRecType = new HashMap<Integer, HashMap<String,AST.Node>>();
 	}
 	public TYP.Type addToAllTypes(TYP.Type a, AST.Node b){
 		
 		return SemAn.isType.put(b, a.actualType());
 	}
 
-	
+
 	public TYP.Type getTypeByName(AST.NameType b){
 		return SemAn.isType.get(b);
 	}
@@ -34,10 +36,11 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 	public TYP.Type visit(Nodes<? extends AST.Node> nodes, Mode arg) {
 		for (final AST.Node node : nodes){
 			node.accept(this, Mode.DECLARE);
-
+			stNod++;
 		}
 		for (final AST.Node node : nodes){
 			node.accept(this, NameResolver.Mode.RESOLVE);
+			stNod++;
 		}
 
 		return null;
@@ -104,13 +107,14 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 			}else if(tmp instanceof TYP.NameType){
 				
 				TYP.Type b = SemAn.isType.get(ptrType.baseType);
+				Report.info(b.toString());
 				/*if(b instanceof TYP.NameType){
-					while(b instanceof TYP.NameType){
-						b = b.actualType();
-					}
+					Report.info(b.toString());
+					b = b.actualType();
 				}*/
-				
-				if(b instanceof TYP.VoidType){
+				//tmp = tmp.actualType();
+
+				if(tmp instanceof TYP.VoidType){
 					throw new Report.Error(ptrType, "Base pointer cannot be void (even if its being cast >:( )!");
 				}
 				
@@ -147,40 +151,26 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
             TYP.Type typ =  new TYP.StrType(null);
             return SemAn.isType.put(strType, typ);
         } else if (arg == Mode.RESOLVE){
-			TYP.Type trenList = SemAn.isType.get(strType);
+			HashMap<String, AST.Node> trenutniList = new HashMap<String, AST.Node>();
 			LinkedList<TYP.Type> typelist = new LinkedList<TYP.Type>();
+
             for (Node comp : strType.comps) {
+
 				TYP.Type b = comp.accept(this, arg);
 				if(b instanceof TYP.VoidType){
 					throw new Report.Error(strType, "Components cannot be void");
 				}
-
-				/*if (b instanceof TYP.RecType){
-					b = ((AST.CompDefn)comp).type.accept(this, arg);
-					Report.info(b.toString());
-					Report.info(comp.toString());
-					while(b instanceof TYP.RecType){
-						SemAn.isType.get(comp);
-
-					}	
+				if(comp instanceof AST.CompDefn a){
+					trenutniList.put(a.name, comp);
 				}
-				/*Report.info(b.toString() + " trenutniId: " + b.id);
-				Report.info("Entering recursive check");
-				//check if recursive
-				if(b instanceof TYP.RecType){
-					TYP.RecType d = (TYP.RecType)b;
-					Report.info("Zdaj primerjam trenutniId z " + trenList.id);
-					if(istiId(d.compTypes, trenList.id)){
 
-						throw new Report.Error("Possible recursive struct");
-					}
-				}*/
 				
 
                 typelist.addLast(b);
             }
-			
 			var typ = new TYP.StrType(typelist);
+			vsiRecType.put(Integer.valueOf(typ.id), trenutniList);
+
 			return SemAn.isType.put(strType, typ);
         }
         return null;
@@ -193,11 +183,17 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
             return SemAn.isType.put(uniType, typ);
         } else if (arg == Mode.RESOLVE){
 			LinkedList<TYP.Type> typelist = new LinkedList<TYP.Type>();
+			HashMap<String, AST.Node> trenutniList = new HashMap<String, AST.Node>();
+
             for (Node comp : uniType.comps) {
                 TYP.Type b = comp.accept(this, arg);
 				if(b instanceof TYP.VoidType){
 					throw new Report.Error(uniType, "Components cannot be void");
 				}
+				if(comp instanceof AST.CompDefn a){
+					trenutniList.put(a.name, comp);
+				}
+
                 typelist.addLast(b);
             }
 			var typ = new TYP.UniType(typelist);
@@ -284,6 +280,10 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 		if(arg==Mode.RESOLVE){
 			TYP.Type b = varDefn.type.accept(this, arg);
 			TYP.Type a = SemAn.isType.get(varDefn.type);
+
+			if(b instanceof TYP.VoidType){
+				throw new Report.Error(varDefn, "Type cannot be void");
+			}
 			return SemAn.ofType.put(varDefn, b);
 		}
 		return null;
