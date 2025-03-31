@@ -15,34 +15,28 @@ import compiler.phase.seman.NameResolver.*;
  * @author bostjan.slivnik@fri.uni-lj.si
  */
 public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
-	static public int stNod=0;
-	public static HashMap<Integer, HashMap<String,AST.Node>> vsiRecType;
+	
+	/** Does file have main */
+	static boolean hasMain;
 	/** Constructs a new name resolver. */
 	public TypeResolver() {
-		vsiRecType = new HashMap<Integer, HashMap<String,AST.Node>>();
-	}
-	public TYP.Type addToAllTypes(TYP.Type a, AST.Node b){
-		
-		return SemAn.isType.put(b, a.actualType());
-	}
-
-
-	public TYP.Type getTypeByName(AST.NameType b){
-		return SemAn.isType.get(b);
+		hasMain = false;
 	}
 
 
 	@Override
 	public TYP.Type visit(Nodes<? extends AST.Node> nodes, Mode arg) {
+		//Report.info("aaaaaaaaa");
 		for (final AST.Node node : nodes){
 			node.accept(this, Mode.DECLARE);
-			stNod++;
 		}
 		for (final AST.Node node : nodes){
 			node.accept(this, NameResolver.Mode.RESOLVE);
-			stNod++;
 		}
-
+		
+		if(!hasMain){
+			throw new Report.Error("No main function found!");
+		}
 		return null;
 	}
 
@@ -107,7 +101,7 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 			}else if(tmp instanceof TYP.NameType){
 				
 				TYP.Type b = SemAn.isType.get(ptrType.baseType);
-				Report.info(b.toString());
+				//Report.info(b.toString());
 				/*if(b instanceof TYP.NameType){
 					Report.info(b.toString());
 					b = b.actualType();
@@ -125,52 +119,25 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 		return null;
 	}
 
-
-	public boolean istiId(Types<TYP.Type> b, int id){
-		for(TYP.Type trenutniNode : b){
-			if(trenutniNode instanceof TYP.NameType){
-				while(trenutniNode instanceof TYP.NameType){
-					trenutniNode = trenutniNode.actualType();
-				}
-			}
-			Report.info(trenutniNode.toString());
-			if(trenutniNode instanceof TYP.RecType){
-				TYP.RecType temp = (TYP.RecType)(trenutniNode);
-				return istiId(temp.compTypes, id);
-			}
-			if(trenutniNode.id == id){
-				return true;
-			}
-		}
-		return false;
-	}
-
 	@Override
 	public TYP.Type visit(AST.StrType strType, Mode arg) {
 		if(arg == Mode.DECLARE){
             TYP.Type typ =  new TYP.StrType(null);
             return SemAn.isType.put(strType, typ);
         } else if (arg == Mode.RESOLVE){
-			HashMap<String, AST.Node> trenutniList = new HashMap<String, AST.Node>();
 			LinkedList<TYP.Type> typelist = new LinkedList<TYP.Type>();
-
+			LinkedList<String> names = new LinkedList<String>();
             for (Node comp : strType.comps) {
-
-				TYP.Type b = comp.accept(this, arg);
+                TYP.Type b = comp.accept(this, arg);
+				AST.CompDefn compDefn = (AST.CompDefn)comp;
 				if(b instanceof TYP.VoidType){
 					throw new Report.Error(strType, "Components cannot be void");
 				}
-				if(comp instanceof AST.CompDefn a){
-					trenutniList.put(a.name, comp);
-				}
-
-				
-
+				names.addLast(compDefn.name);
                 typelist.addLast(b);
             }
 			var typ = new TYP.StrType(typelist);
-			vsiRecType.put(Integer.valueOf(typ.id), trenutniList);
-
+			typ.names = names;
 			return SemAn.isType.put(strType, typ);
         }
         return null;
@@ -183,20 +150,19 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
             return SemAn.isType.put(uniType, typ);
         } else if (arg == Mode.RESOLVE){
 			LinkedList<TYP.Type> typelist = new LinkedList<TYP.Type>();
-			HashMap<String, AST.Node> trenutniList = new HashMap<String, AST.Node>();
+			LinkedList<String> names = new LinkedList<String>();
 
             for (Node comp : uniType.comps) {
                 TYP.Type b = comp.accept(this, arg);
+				AST.CompDefn compDefn = (AST.CompDefn)comp;
 				if(b instanceof TYP.VoidType){
 					throw new Report.Error(uniType, "Components cannot be void");
 				}
-				if(comp instanceof AST.CompDefn a){
-					trenutniList.put(a.name, comp);
-				}
-
+				names.addLast(compDefn.name);
                 typelist.addLast(b);
             }
 			var typ = new TYP.UniType(typelist);
+			typ.names = names;
 			return SemAn.isType.put(uniType, typ);
         }
 		return null;
@@ -284,133 +250,34 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 			if(b instanceof TYP.VoidType){
 				throw new Report.Error(varDefn, "Type cannot be void");
 			}
-			return SemAn.ofType.put(varDefn, b);
+			return SemAn.ofType.put(varDefn, b.actualType());
 		}
 		return null;
 	}
 
 
-	public boolean doesStmtHaveReturn(Nodes<AST.Stmt> stmtList, TYP.Type a){
-		//Report.info(a.toString());
-		//Report.info("cccc");
-		for(AST.Stmt stmt : stmtList){
-			if(stmt instanceof AST.LetStmt){
-				AST.LetStmt castStmt = (AST.LetStmt)stmt;
-				return (doesStmtHaveReturn(castStmt.stmts, a));
-			}
-			if(stmt instanceof AST.ExprStmt){
-				return false;
-			}
-			if(stmt instanceof AST.AssignStmt){
-				return false;
-			}
-			if(stmt instanceof AST.IfThenStmt){
-				AST.IfThenStmt castStmt = (AST.IfThenStmt)stmt;
-				return (doesStmtHaveReturn(castStmt.thenStmt, a));
-			}
-			if(stmt instanceof AST.IfThenElseStmt){
-				AST.IfThenElseStmt castStmt = (AST.IfThenElseStmt)stmt;
-				return (doesStmtHaveReturn(castStmt.thenStmt, a) || doesStmtHaveReturn(castStmt.elseStmt, a));
-			}
-			if(stmt instanceof AST.ReturnStmt){
-				//Report.info("s");
-				// AST.ReturnStmt castStmt = (AST.ReturnStmt)stmt;
-				// TYP.Type retValue = castStmt.retExpr.accept(this, Mode.RESOLVE);
-				// TYP.Type b = SemAn.ofType.get(castStmt.retExpr);
-				// if(b != null){
-				// 	if(b.actualType() == a.actualType())
-				// 		return true;
-				// }
-				// if(retValue != null){
-				// 	if(retValue.actualType() == a.actualType())
-				// 		return true;
-				// }
-				
-				return true;
-			}
-			if(stmt instanceof AST.WhileStmt){
-				AST.WhileStmt castStmt = (AST.WhileStmt)stmt;
-				return doesStmtHaveReturn(castStmt.stmts, a);
-			}
-			
-		}
-
-		return false;
-	}
-
-	public boolean doesStmtHaveReturn(AST.Stmt stmt, TYP.Type a){
-		if(stmt instanceof AST.LetStmt){
-			AST.LetStmt castStmt = (AST.LetStmt)stmt;
-			return (doesStmtHaveReturn(castStmt.stmts, a));
-		}
-		if(stmt instanceof AST.ExprStmt){
-			return false;
-		}
-		if(stmt instanceof AST.AssignStmt){
-			return false;
-		}
-		if(stmt instanceof AST.IfThenElseStmt){
-			AST.IfThenElseStmt castStmt = (AST.IfThenElseStmt)stmt;
-			return (doesStmtHaveReturn(castStmt.thenStmt, a) || doesStmtHaveReturn(castStmt.elseStmt, a));
-		}else if(stmt instanceof AST.IfThenStmt){
-			//Report.info("hallo");
-			AST.IfThenStmt castStmt = (AST.IfThenStmt)stmt;
-			return (doesStmtHaveReturn(castStmt.thenStmt, a));
-		}
-		
-		if(stmt instanceof AST.ReturnStmt){
-			AST.ReturnStmt castStmt = (AST.ReturnStmt)stmt;
-			TYP.Type retValue = castStmt.accept(this, Mode.RESOLVE);
-			TYP.Type b = SemAn.ofType.get(castStmt.retExpr);
-			
-			
-			return true;
-			
-		}
-		if(stmt instanceof AST.WhileStmt){
-			AST.WhileStmt castStmt =(AST.WhileStmt)stmt;
-			return doesStmtHaveReturn(castStmt.stmts, a);
-		}
-
-
-		return false;
-	}
 
 	@Override
 	public TYP.Type visit(AST.DefFunDefn defFunDefn, Mode arg) {
 		boolean hasReturn = false;
 		boolean noError = false;
 		TYP.Type returnType = null;
-		defFunDefn.pars.accept(this, arg);
 		if(arg == Mode.DECLARE){
+			if(defFunDefn.name.equals("main")){
+				hasMain = true;
+			}
 		}
 		if (arg == Mode.RESOLVE){
+			LinkedList<TYP.Type> params = new LinkedList<TYP.Type>();
+			for(var param : defFunDefn.pars){
+				TYP.Type resolvedParam = param.accept(this, arg);
+				params.addLast(resolvedParam);
+			}
 			TYP.Type a = (defFunDefn.type).accept(this, arg);
 			defFunDefn.stmts.accept(this, arg);
-			/*for (var stmt : defFunDefn.stmts){
-				if(doesStmtHaveReturn(stmt, a)){
-					//Report.warning("FFF");
-					hasReturn = true;
-					returnType = stmt.accept(this, arg);
-					if(returnType != null){
-						Report.warning(returnType.toString());
-					}
-					//if(returnType instanceof a){
-						noError = true;
-					//}
-
-				
-				}
-			}
-			if(!hasReturn)
-				throw new Report.Error(defFunDefn,"Function should have a return statement");
-
-			if(!noError){
-				throw new Report.Error(defFunDefn,"Function returns wrong type");
-			}*/
 
 			
-			return SemAn.ofType.put(defFunDefn, a);
+			return SemAn.ofType.put(defFunDefn, new TYP.FunType(params, a));
 		}
 		return null;
 	}
@@ -420,8 +287,16 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 		
 		if (arg == Mode.RESOLVE){
 
-			TYP.Type a = (extFunDefn.type).accept(this, arg);
-			return SemAn.ofType.put(extFunDefn, a);
+			LinkedList<TYP.Type> params = new LinkedList<TYP.Type>();
+			for(var param : extFunDefn.pars){
+				TYP.Type resolvedParam = param.accept(this, arg);
+				params.addLast(resolvedParam);
+			}
+			TYP.Type b = (extFunDefn.type).accept(this, arg);
+			
+
+			
+			return SemAn.ofType.put(extFunDefn,  new TYP.FunType(params, b));
 			
 		}
 		return null;
@@ -439,6 +314,10 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 
 	@Override
 	public TYP.Type visit(AST.CompDefn compDefn, Mode arg) {
+		if(arg == Mode.DECLARE){
+			TYP.NameType tmp = new TYP.NameType(compDefn.name);
+			return SemAn.isType.put(compDefn, tmp);
+		}
 		if(arg==Mode.RESOLVE){
 			TYP.Type a = compDefn.type.accept(this, arg);
 			return SemAn.ofType.put(compDefn, a);

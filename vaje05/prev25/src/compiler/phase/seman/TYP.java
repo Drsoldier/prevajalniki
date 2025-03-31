@@ -404,6 +404,8 @@ public class TYP {
 		/** Types of components. */
 		public final Types<Type> compTypes;
 
+		/** The names of components. */
+		public LinkedList<String> names;
 		/**
 		 * Constructs a new record type.
 		 * 
@@ -411,6 +413,7 @@ public class TYP {
 		 */
 		public RecType(final List<Type> compTypes) {
 			this.compTypes = new Types<Type>(compTypes);
+			this.names = new LinkedList<String>();
 		}
 
 	}

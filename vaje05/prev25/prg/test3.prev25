@@ -1,0 +1,7 @@
+typ d = <o:int, p : char>
+typ f = {o:int, p : char}
+#var l : d
+fun main() : void =
+    #(^l)^.o = 1,
+    ^1,
+    return 1

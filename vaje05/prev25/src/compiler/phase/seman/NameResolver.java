@@ -31,6 +31,13 @@ public class NameResolver implements AST.FullVisitor<Object, NameResolver.Mode> 
 		RESOLVE,
 	}
 
+	/**
+	 * Declares a name in the symbol table. If the name has already been declared in
+	 * the current scope, an error is reported.
+	 * 
+	 * @param name The name.
+	 * @param defn The definition.
+	 */
     private void declare(String name, Defn defn) {
         try{
 			symbTable.ins(name, defn);
@@ -40,7 +47,14 @@ public class NameResolver implements AST.FullVisitor<Object, NameResolver.Mode> 
 		
         return;
     }
-
+	/**
+	 * Resolves a name in the symbol table. If the name has not been declared in the
+	 * current scope or any enclosing scope, an error is reported.
+	 * 
+	 * @param name The name.
+	 * @param node The node where the name is used.
+	 * @return The definition of the name.
+	 */
 	private AST.Defn resolveName(String name, NameType node) {
 		try{
     		SemAn.defAt.put(node, symbTable.fnd(name));
@@ -51,6 +65,14 @@ public class NameResolver implements AST.FullVisitor<Object, NameResolver.Mode> 
 		return null;
 	}
 
+	/**
+	 * Resolves a name in the symbol table. If the name has not been declared in the
+	 * current scope or any enclosing scope, an error is reported.
+	 * 
+	 * @param name The name.
+	 * @param node The node where the name is used.
+	 * @return The definition of the name.
+	 */
 	private AST.Defn resolveNameExpr(String name, NameExpr node) {
 		try{
     		SemAn.defAt.put(node, symbTable.fnd(name));

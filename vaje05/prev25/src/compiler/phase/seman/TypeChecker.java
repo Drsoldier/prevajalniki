@@ -5,8 +5,8 @@ import java.util.*;
 import compiler.common.report.*;
 import compiler.phase.abstr.*;
 import compiler.phase.abstr.AST.*;
+import compiler.phase.abstr.AST.NameType;
 import compiler.phase.seman.TYP.*;
-import compiler.phase.seman.TYP.IntType;
 import compiler.phase.seman.NameResolver.*;
 /**
  * Type checker.
@@ -14,40 +14,12 @@ import compiler.phase.seman.NameResolver.*;
  * @author bostjan.slivnik@fri.uni-lj.si
  */
 public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
-	public int stNod;
 	/** Constructs a new name checker. */
 	public TypeChecker() {
-		stNod = TypeResolver.stNod;
 	}
 	
 	// ------- Functions ----------
-	/*@Override
-	public TYP.Type visit(AST.DefFunDefn defFunDefn, Mode arg) {
-		Report.info("Checking function "+defFunDefn.name);
-		boolean noError = false;
-		TYP.Type returnType = null;
-		defFunDefn.pars.accept(this, arg);
-		
-		TYP.Type a = SemAn.ofType.get((defFunDefn));
-		defFunDefn.stmts.accept(this, arg);
-		Report.info(a.toString());
-		for (var stmt : defFunDefn.stmts){
-			if(doesStmtHaveReturn(stmt, a)){
-				//Report.warning("FFF");
-				noError = true;
-				returnType = SemAn.ofType.get((stmt));
-
-				
-			
-			}
-		}
-
-		if(!noError){
-			throw new Report.Error(defFunDefn,"Function returns wrong type");
-		}
-
-		return SemAn.ofType.put(defFunDefn, a);
-	}*/
+	
 
 	@Override
 	public TYP.Type visit(AST.PtrType ptrType, Mode arg) {
@@ -116,6 +88,44 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 
 	}
 
+
+	@Override
+	public TYP.Type visit(AST.TypDefn typDefn, Mode arg) {
+		TYP.Type temp = SemAn.isType.get(typDefn.type);
+		if(temp instanceof TYP.NameType b){
+			//Report.info("Typedefn"+typDefn.name +  " is a name type");
+			//SemAn.ofType.get
+			try{
+				var d = typDefn.type.accept(this, arg);
+				if(temp == d){
+					throw new Report.Error(typDefn, "Typedefn " + typDefn.name + " is recursive");
+				}
+			}catch(StackOverflowError e){
+				throw new Report.Error(typDefn, "Typedefn " + typDefn.name + " is recursive");
+				//Report.info("Error in type definition");
+			}
+		}
+
+		return null;
+		
+	}
+	
+	@Override
+	public TYP.Type visit(AST.NameType nameType, Mode arg) {
+		
+		AST.Node nameType2 = (SemAn.defAt.get(nameType));
+
+		if(nameType2 instanceof AST.TypDefn){
+			TYP.Type a = SemAn.isType.get(nameType2);
+			return a;
+		}
+		throw new Report.Error(nameType, "Unable to resolve type for: " + nameType.name);
+	
+
+	}
+
+
+
 	@Override
 	public TYP.Type visit(AST.StrType strType, Mode arg) {
 		TYP.Type trenList = SemAn.isType.get(strType);
@@ -131,29 +141,17 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 			typelist.addLast(b);
 		}
 		
-		var typ = new TYP.StrType(typelist);
 
-		return SemAn.isType.put(strType, typ);
+		return trenList;
 	}
 
+
 	@Override
-	public TYP.Type visit(AST.BinExpr binExpr, Mode arg) {
-		/*
+	public TYP.Type visit(AST.BinExpr binExpr, Mode arg) {	
 		TYP.Type a = binExpr.fstExpr.accept(this, arg);
 		TYP.Type b = binExpr.sndExpr.accept(this, arg);
-		 */
-		
-		binExpr.fstExpr.accept(this, arg);
-		TYP.Type a = SemAn.ofType.get(binExpr.fstExpr);
-		
-		binExpr.sndExpr.accept(this, arg);
-		TYP.Type b = SemAn.ofType.get(binExpr.sndExpr);
-		if(a==null)
-			Report.info("shit");
-		if(b==null)
-			Report.info("fuck");
-		
-		if (a.actualType().equals(b.actualType()) && !(a instanceof TYP.RecType)) {
+
+		if (compTypes(a, b) && !(a instanceof TYP.RecType)) {
 			
 			if(b instanceof TYP.BoolType || b instanceof TYP.IntType || b instanceof TYP.CharType || b instanceof TYP.PtrType || b instanceof TYP.NameType || b instanceof TYP.VoidType){
 				try{
@@ -172,7 +170,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 				}catch(Exception e){
 
 				}
-				Report.info(a.toString() + " " + b.toString());
+				//Report.info(a.toString() + " " + b.toString());
 				switch(binExpr.oper){
 					case OR:
 					case AND:
@@ -205,6 +203,10 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 			//return SemAn.ofType.put(binExpr, a);
 
 		}else{
+			if(a==null)
+				return null;
+			if(b==null)
+				return null;
 			throw new Report.Error(binExpr, "Cannot coerce " + a.actualType().toString() + " into " + b.actualType().toString());
 		}//return SemAn.ofType.put(binExpr, TYP.BoolType.type);
 	}
@@ -213,9 +215,12 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 	public TYP.Type visit(AST.CallExpr callExpr, Mode arg) {
 		ArrayList<TYP.Type> parTypes = new ArrayList<TYP.Type>();
 		TYP.Type funType = callExpr.funExpr.accept(this, arg);
+		if(!(funType instanceof TYP.FunType)){
+			throw new Report.Error(callExpr,"Expected a function");
+		}
 		for (AST.Expr a : callExpr.argExprs)
 			parTypes.add(a.accept(this, arg));
-		Report.info(funType.actualType().toString());
+		//Report.info(funType.actualType().toString());
 		while(funType instanceof TYP.NameType){
 			funType = funType.actualType();
 		}
@@ -244,34 +249,21 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 
 
 	@Override
-    public TYP.Type visit(AST.CompExpr compExpr, Mode mode) {
-        compExpr.recExpr.accept(this, mode);
-		
-        TYP.Type compType = SemAn.ofType.get(compExpr.recExpr);
-		
-		//this should be either struct or union
-		var structOrUnion = SemAn.defAt.get(compExpr.recExpr).type;
-		while(structOrUnion instanceof AST.NameType){
-			structOrUnion = SemAn.defAt.get(structOrUnion).type;
+	public TYP.Type visit(AST.CompExpr compExpr, Mode arg) {
+		TYP.Type recType = compExpr.recExpr.accept(this, arg).actualType();
+		//Report.info(recType.toString());
+		if(!(recType instanceof TYP.RecType)){
+			throw new Report.Error(compExpr, "Cannot access component of non-record type");
 		}
-		AST.RecType recordType = (AST.RecType)structOrUnion;
-		if(!(structOrUnion instanceof AST.RecType)){
-			throw new Report.Error(compExpr, "Cannot access a non union / struct");
+		TYP.RecType rec = (TYP.RecType) recType;
+		int ind = rec.names.indexOf(compExpr.name);
+		if(ind == -1){
+			throw new Report.Error(compExpr, "Component '" + compExpr.name + "' not found in struct or union.");
 		}
-		
-		var listOfComponents = recordType.comps;
-
-		for(CompDefn componentDefinition : listOfComponents){
-			if(componentDefinition.name.equals(compExpr.name)){
-				return SemAn.ofType.put(compExpr, SemAn.ofType.get(componentDefinition));
-			}
-		}
-		if(compType == null){
-            return SemAn.ofType.put(compExpr, TYP.VoidType.type);    
-        }
-		throw new Report.Error(compExpr,"Could not find component with name " + compExpr.name);
-        
-    }
+		TYP.Type compType = rec.compTypes.get(ind);
+		SemAn.ofType.put(compExpr, compType);
+		return compType; 
+	}
 
 	@Override
 	public TYP.Type visit(AST.NameExpr nameExpr, Mode arg) {
@@ -321,6 +313,43 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 
 
 	@Override
+	public TYP.Type visit(AST.DefFunDefn defFunDefn, Mode arg) {
+		//Report.info("Checking function "+defFunDefn.name);
+		boolean noError = false;
+		TYP.Type returnType = null;
+		defFunDefn.pars.accept(this, arg);
+		TYP.Type a = SemAn.ofType.get((defFunDefn));
+		if(!(a instanceof TYP.FunType)){
+			throw new Report.Error(defFunDefn,"What the fuck is this");
+		}
+		var b = (TYP.FunType)a;
+		
+		defFunDefn.stmts.accept(this, arg);
+		//Report.info("resType:"+b.resType.toString()+" of function:" + defFunDefn.name);
+		for (var stmt : defFunDefn.stmts){
+			if(doesStmtHaveReturn(stmt, b.resType)){
+				noError = true;
+				//returnType = SemAn.ofType.get((stmt));
+				//Report.info("This is the return type: " + returnType.toString());
+				
+				break;
+				
+			
+			}
+		}
+
+		if(!noError){
+			throw new Report.Error(defFunDefn,"Function returns wrong type");
+			//throw new Report.Error(defFunDefn,"Function returns wrong type");
+		}
+		if(!compTypes(returnType, a)){
+		}
+
+		return SemAn.ofType.put(defFunDefn, a);
+		
+	}
+
+	@Override
 	public TYP.Type visit(AST.SfxExpr sfxExpr, Mode arg) {
 		
 		TYP.Type temp = sfxExpr.subExpr.accept(this,  Mode.RESOLVE);
@@ -344,24 +373,48 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 
 
 	// ----- Statements -----
-	/*
-	@Override
-	public TYP.Type visit(AST.LetStmt letStmt, Mode arg) {
-		return null;
-	}*/
 
-	public boolean compTypes(TYP.Type a, TYP.Type b){
+	/**
+	 * Checks if two types are the same
+	 * @param a First type
+	 * @param b Sencond type
+	 * @return True if they are the same, false otherwise
+	 */
+	public static boolean compTypesDebug(TYP.Type a, TYP.Type b){
+		//if(a != null && b != null)
+			//Report.info("a:" +a.toString() + " b:" + b.toString());
+		//else
+			//Report.info("One of the types is null");
+		return compTypes(a, b);
+	}
+
+	/**
+	 * Compares two types and checks if they are the same
+	 * @param a First type
+	 * @param b Sencond type
+	 * @return True if they are the same, false otherwise
+	 */
+	public static boolean compTypes(TYP.Type a, TYP.Type b){
+
 		if(a instanceof TYP.NameType){
 			a = a.actualType();
 		}
 		if(b instanceof TYP.NameType){
 			b = b.actualType();
 		}
+		if(a == null || b == null){
+			//TODO FIX THIS TO FALSE
+			return false;
+		}
+		//Report.info("first arg val:" + a.toString() + " second arg val:" + b.toString());
 		if(a instanceof TYP.RecType a2 && b instanceof TYP.RecType b2){
+			if(a2.toString().equals(b2.toString())){
+				return true;
+			}
 			boolean neki = true;
-			if(a2.compTypes.size() != b2.compTypes.size())
+			if(a2.compTypes.size() != b2.compTypes.size()){
 				return false;
-				
+			}
 			
 			for(int i = 0; i<a2.compTypes.size(); i++){
 				var prviComp = a2.compTypes.get(i);
@@ -382,12 +435,18 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 			}
 			return neki;
 		}else if(a instanceof TYP.PtrType a2 && b instanceof TYP.PtrType b2){
-			if((a2.baseType.actualType() == TYP.VoidType.type)){
+			//Report.info("Hallo, the pointer values are:" +a2.actualType().toString()+ ","+ b2.actualType().toString());
+			if( (b2.baseType.actualType() instanceof TYP.VoidType) && (a2.baseType.actualType() instanceof TYP.VoidType))
+				return true;
+			
+			if((a2.baseType.actualType() instanceof TYP.VoidType)){
+
 				return false;
 			}
-			if(b2.baseType.actualType() == TYP.VoidType.type){
-				return true;
+			if(b2.baseType.actualType() instanceof TYP.VoidType){
 
+				return true;
+				
 			}
 			return compTypes(a2.baseType, b2.baseType);
 		}else if(a instanceof TYP.IntType && b instanceof TYP.IntType){
@@ -400,6 +459,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 			return compTypes(a, a2.resType);
 		}else if(a instanceof TYP.ArrType a2 && b instanceof TYP.ArrType b2){
 			return compTypes(a2.elemType, b2.elemType);
+		}else if(a.actualType().equals(b.actualType())){
+			return true;
 		}
 
 		return false;
@@ -407,35 +468,27 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 
 	@Override
 	public TYP.Type visit(AST.AssignStmt assignStmt, Mode arg) {
-		TYP.Type src = assignStmt.srcExpr.accept(this, arg);
 		TYP.Type dst = assignStmt.dstExpr.accept(this, arg);
+		TYP.Type src = assignStmt.srcExpr.accept(this, arg);
 
 		
-		if(src instanceof TYP.FunType){
+		if(dst instanceof TYP.FunType){
 			throw new Report.Error(assignStmt, "Left assignment cannot be a function"); 
-		}if(dst instanceof TYP.FunType){
-			dst = ((TYP.FunType)dst).resType;
+		}if(src instanceof TYP.FunType){
+			src = ((TYP.FunType)src).resType;
 		}
 
-		/*if(src != null){
-			Report.info(src.toString());
-		}if(dst != null){
-			Report.info(dst.toString());
-		}*/
 		if(src != null && dst != null){
-			if(src instanceof TYP.PtrType a && dst instanceof TYP.PtrType b){
-				if (a.baseType instanceof TYP.NameType){
-					var d = a.baseType.actualType();
-					Report.info(d.toString());
-					if(d instanceof TYP.VoidType)
-						return null;
-					else
-						throw new Report.Error(assignStmt, "Types do not match");
+			if(compTypes(dst, src)){
+				//Report.info("Types "+ src.toString()+ " and " +dst.toString() +  " are equal");
+			}else{
+				if(src instanceof TYP.PtrType a && dst instanceof TYP.PtrType b){
+					//Report.info(a.baseType.toString() + " " + b.baseType.toString());
 				}
-			}else if(!(src.toString().equals(dst.toString()))){
-				Report.info("'"+src.toString() + "' '" + dst.toString() + "'");
+				//Report.info("Types "+ src.toString()+ " and " +dst.toString() +  " are not equal");
 				throw new Report.Error(assignStmt, "Types do not match");
 			}
+			
 		}
 		return null;
 	}
@@ -449,9 +502,13 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 	@Override
 	public TYP.Type visit(AST.IfThenStmt ifThenStmt, Mode arg) {
 		TYP.Type condType = ifThenStmt.condExpr.accept(this, arg);
-		if(condType.actualType() != TYP.BoolType.type){
+		//Report.warning(ifThenStmt.condExpr.toString());
+		if(!(compTypes(condType, TYP.BoolType.type))){
+			//if(condType != null)
+				//Report.info(condType.toString());
 			throw new Report.Error(ifThenStmt,"Conditional statement should be of bool");
 		}
+		
 		ifThenStmt.thenStmt.accept(this,arg);
 		return null;
 	}
@@ -459,7 +516,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 	@Override
 	public TYP.Type visit(AST.IfThenElseStmt ifThenElseStmt, Mode arg) {
 		TYP.Type condType = ifThenElseStmt.condExpr.accept(this, arg);
-		if(condType.actualType() != TYP.BoolType.type){
+		if(!(compTypes(condType, TYP.BoolType.type))){
 			throw new Report.Error(ifThenElseStmt,"Conditional statement should be of bool");
 		}
 		
@@ -477,7 +534,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 	@Override
 	public TYP.Type visit(AST.WhileStmt whileStmt, Mode arg) {
 		TYP.Type condType = whileStmt.condExpr.accept(this, arg);
-		if(condType.actualType() != TYP.BoolType.type){
+		if(!(compTypes(condType, TYP.BoolType.type))){
 			throw new Report.Error(whileStmt,"Conditional statement should be of bool");
 		}
 		whileStmt.stmts.accept(this,arg);
@@ -485,75 +542,27 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 	}
 		
 
-	public boolean traverseDaTree(Types<TYP.Type> list, int stKorakovLeft){
-		if(stKorakovLeft < 1){
-
+	/**
+	 * Checks if a statement has a return statement with the same type as the function
+	 * @param stmtList go through the list and check if any of the statements have a return
+	 * @param expectedType the expected type of the return statement
+	 * @return True if the statement has a return statement with the same type as the function
+	 */
+	public boolean doesStmtHaveReturn(Nodes<AST.Stmt> stmtList, TYP.Type expectedType) {
+		for (AST.Stmt stmt : stmtList) {
+			if (doesStmtHaveReturn(stmt, expectedType)) {
+				return true;
+			}
 		}
-		return true;
-	}
-
-
-	public boolean doesStmtHaveReturn(Nodes<AST.Stmt> stmtList, TYP.Type a){
-		//Report.info(a.toString());
-
-		//Report.info("cccc");
-		for(AST.Stmt stmt : stmtList){
-			if(stmt instanceof AST.LetStmt){
-				AST.LetStmt castStmt = (AST.LetStmt)stmt;
-				return (doesStmtHaveReturn(castStmt.stmts, a));
-			}
-			if(stmt instanceof AST.ExprStmt){
-				return false;
-			}
-			if(stmt instanceof AST.AssignStmt){
-				return false;
-			}
-			if(stmt instanceof AST.IfThenStmt){
-				AST.IfThenStmt castStmt = (AST.IfThenStmt)stmt;
-				return (doesStmtHaveReturn(castStmt.thenStmt, a));
-			}
-			if(stmt instanceof AST.IfThenElseStmt){
-				AST.IfThenElseStmt castStmt = (AST.IfThenElseStmt)stmt;
-				return (doesStmtHaveReturn(castStmt.thenStmt, a) || doesStmtHaveReturn(castStmt.elseStmt, a));
-			}
-			if(stmt instanceof AST.ReturnStmt){
-				AST.ReturnStmt castStmt = (AST.ReturnStmt)stmt;
-				TYP.Type retValue = castStmt.accept(this, Mode.RESOLVE);
-				TYP.Type b = SemAn.ofType.get(castStmt.retExpr);
-				if(a == null){
-					Report.warning("fuck");
-				}
-				if(b == null){
-					Report.warning("b is null");
-
-				}else if(retValue == null){
-					Report.warning("retValue is null");
-
-				}
-				if(b != null && retValue != null)
-					Report.info("This is within the list statement: retValue="+retValue.toString() + " b=" + b.toString() + " a=" + a.toString());
-				/*if(b != null){
-					Report.info(b.toString());
-					if(b.actualType() == a.actualType())
-						return true;
-				}*/
-				if(retValue != null){
-				if(retValue.actualType() == a.actualType())
-					Report.warning("does it actually work?");
-					return true;
-				}	
-			
-				return false;
-			}
-			if(stmt instanceof AST.WhileStmt){
-				AST.WhileStmt castStmt = (AST.WhileStmt)stmt;
-				return doesStmtHaveReturn(castStmt.stmts, a);
-			}
-			
-		}
-
 		return false;
 	}
+
+	/**
+	 * Checks if a statement has a return statement with the same type as the function
+	 * @param stmt the statement to check
+	 * @param a the expected type of the return statement
+	 * @return True if the statement has a return statement with the same type as the function
+	 */
 	public boolean doesStmtHaveReturn(AST.Stmt stmt, TYP.Type a){
 
 		if(stmt instanceof AST.LetStmt){
@@ -576,13 +585,26 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		}
 		
 		if(stmt instanceof AST.ReturnStmt){
+			//Report.info("null3");
+
 			AST.ReturnStmt castStmt = (AST.ReturnStmt)stmt;
-			TYP.Type retValue = castStmt.accept(this, Mode.RESOLVE);
 			TYP.Type b = SemAn.ofType.get(castStmt.retExpr);
-			if(b != null && retValue != null)
-				Report.info("This is within the singular statement: retValue="+retValue.toString() + " b=" + b.toString());
-			if(b.actualType().equals(a.actualType()))
+			//Report.info("\n----------\n"+b.toString()+"\n-------------");
+			if(b instanceof TYP.VoidType){
+				return false;
+			}
+			if(a instanceof TYP.VoidType){
 				return true;
+			}
+			if(b.actualType().equals(a.actualType())){
+				//Report.info("null");
+				return true;
+			}
+			if(compTypesDebug(a.actualType(), b)){
+				//Report.info("null2");
+				return true;
+			}
+
 			return false;
 		}
 		if(stmt instanceof AST.WhileStmt){
