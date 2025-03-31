@@ -1,6 +1,5 @@
 typ elem = void
 typ llist = < x : ^elem , rem: ^llist >
-typ a = a
 var t : char
 fun add(l : ^llist, val : int) : ^llist =
     let

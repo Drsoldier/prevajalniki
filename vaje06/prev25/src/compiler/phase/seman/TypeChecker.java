@@ -84,8 +84,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 					temp = null;
 					break;
 			}
-			//SemAn.isAddr.put(atomExpr, false);
-			//SemAn.isConst.put(atomExpr, true);
+			SemAn.isAddr.put(atomExpr, false);
+			SemAn.isConst.put(atomExpr, true);
 			return SemAn.ofType.put(atomExpr, temp);
 
 	}
@@ -147,7 +147,13 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		return trenList;
 	}
 
-
+	@Override
+	public TYP.Type visit(AST.CompDefn compDefn, Mode arg) {
+		SemAn.isAddr.put(compDefn, true);
+		SemAn.isConst.put(compDefn, false);
+		TYP.Type a = compDefn.type.accept(this, arg);
+		return SemAn.ofType.put(compDefn, a);
+	}
 	@Override
 	public TYP.Type visit(AST.BinExpr binExpr, Mode arg) {	
 		TYP.Type a = binExpr.fstExpr.accept(this, arg);
@@ -216,6 +222,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 	@Override
 	public TYP.Type visit(AST.CallExpr callExpr, Mode arg) {
 		ArrayList<TYP.Type> parTypes = new ArrayList<TYP.Type>();
+		SemAn.isAddr.put(callExpr, false);
+		SemAn.isConst.put(callExpr, false);
 		TYP.Type funType = callExpr.funExpr.accept(this, arg);
 		if(!(funType instanceof TYP.FunType)){
 			throw new Report.Error(callExpr,"Expected a function");
@@ -240,6 +248,12 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		
 		castExpr.expr.accept(this,arg);
 		SemAn.defAt.get(castExpr.expr).accept(this, arg);
+		boolean isAddr = SemAn.isAddr.get(castExpr.expr);
+		boolean isConst = SemAn.isConst.get(castExpr.expr);
+
+		SemAn.isAddr.put(castExpr, isAddr);
+		SemAn.isConst.put(castExpr, isConst);
+
 		TYP.Type castType = SemAn.isType.get(castExpr.type);
 		if (castType == null)
 			throw new Report.Error(castExpr, "Cannot resolve type " + castExpr.type);
@@ -253,6 +267,9 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 	@Override
 	public TYP.Type visit(AST.CompExpr compExpr, Mode arg) {
 		TYP.Type recType = compExpr.recExpr.accept(this, arg).actualType();
+		if(SemAn.isAddr.get(compExpr.recExpr)){
+			throw new Report.Error(compExpr, "Cannot access component on an expression that doesnt exist");
+		}
 		//Report.info(recType.toString());
 		if(!(recType instanceof TYP.RecType)){
 			throw new Report.Error(compExpr, "Cannot access component of non-record type");
@@ -264,8 +281,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		}
 		TYP.Type compType = rec.compTypes.get(ind);
 		SemAn.ofType.put(compExpr, compType);
-		//SemAn.isAddr.put(compExpr, true);
-		//SemAn.isConst.put(compExpr, false);
+		SemAn.isAddr.put(compExpr, true);
+		SemAn.isConst.put(compExpr, false);
 			
 		return compType; 
 	}
@@ -274,8 +291,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 	public TYP.Type visit(AST.NameExpr nameExpr, Mode arg) {
 		AST.Defn defn = SemAn.defAt.get(nameExpr);
         TYP.Type nameType = SemAn.ofType.get(defn);
-		//SemAn.isAddr.put(nameExpr, true);
-		//SemAn.isConst.put(nameExpr, false);
+		SemAn.isAddr.put(nameExpr, true);
+		SemAn.isConst.put(nameExpr, false);
         return SemAn.ofType.put(nameExpr, nameType);
 	}
 
@@ -283,10 +300,10 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 	public TYP.Type visit(AST.PfxExpr pfxExpr, Mode arg) {
 		TYP.Type temp;
 		TYP.Type tmp2 = pfxExpr.subExpr.accept(this, arg);
-		//boolean isAddr = SemAn.isAddr.get(pfxExpr.subExpr);
-		//boolean isConst = SemAn.isConst.get(pfxExpr.subExpr);
-		//SemAn.isAddr.put(pfxExpr, isAddr);
-		//SemAn.isConst.put(pfxExpr, isConst);
+		boolean isAddr = SemAn.isAddr.get(pfxExpr.subExpr);
+		boolean isConst = SemAn.isConst.get(pfxExpr.subExpr);
+		SemAn.isAddr.put(pfxExpr, isAddr);
+		SemAn.isConst.put(pfxExpr, isConst);
 		switch(pfxExpr.oper){
 			case ADD:
 				temp = TYP.IntType.type;
@@ -383,7 +400,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		if(temp instanceof TYP.VoidType){
 			throw new Report.Error(sizeExpr,"Unable to dereference a null pointer");
 		}
-
+		SemAn.isAddr.put(sizeExpr, false);
+		SemAn.isConst.put(sizeExpr, true);
 		return null;
 	}
 
