@@ -17,7 +17,7 @@ import compiler.common.report.*;
  */
 public class MemEvaluator implements AST.FullVisitor<Object, MEM.Neki> {
     public static SizeEvaluator sizeEval = new SizeEvaluator();
-    public MEM.Neki neki;
+    public static MEM.Neki neki;
     
     @Override
     public Object visit(AST.VarDefn varDefn, MEM.Neki arg) {
@@ -30,7 +30,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, MEM.Neki> {
     @Override
 	public TYP.Type visit(Nodes<? extends AST.Node> nodes, Neki arg) {
 		//Report.info("aaaaaaaaa");
-        neki = new MEM().new Neki();
+        neki = new Neki();
         for (final AST.Node node : nodes){
 			node.accept(this, neki);
 		}
@@ -44,10 +44,10 @@ public class MemEvaluator implements AST.FullVisitor<Object, MEM.Neki> {
     public Object visit(AST.DefFunDefn defFunDefn, Neki arg) {
         var label = new MEM.Label(defFunDefn.name);
         //var size = Memory.accesses.get(defFunDefn).size;
-        var curDepth = arg.depth;
+        var curDepth = arg.depth+1;
         var curSize = arg.size;
         var curOffset = arg.offset;
-        
+        arg.depth+=1;
         defFunDefn.pars.accept(this, arg);
         MEM.Frame access = new MEM.Frame(label, curDepth, 0, 0, 0);
         //var neki = Memory.accesses.get(defFunDefn);
@@ -61,9 +61,20 @@ public class MemEvaluator implements AST.FullVisitor<Object, MEM.Neki> {
         
         var size = SemAn.ofType.get(parDefn);
         long l = size.accept(sizeEval, null) + 1l;
-        Neki n = new MEM().new Neki(arg.depth+1, arg.size, arg.offset+l);
-        parDefn.type.accept(this, n);
+        l = size.accept(sizeEval, null) + 1l;
         
+
+       if(size instanceof TYP.RecType){
+            Neki n = new Neki(arg.depth, l, 0);
+            parDefn.type.accept(this, n);
+            arg.offset = n.size;
+        }else{
+            arg.offset += l;
+            //naprej
+            parDefn.type.accept(this, arg);
+        }
+       
+        parDefn.type.accept(this, arg);
 
         var t = new MEM.RelAccess(l, arg.offset, arg.depth);
         return Memory.accesses.put(parDefn, t);
@@ -71,13 +82,20 @@ public class MemEvaluator implements AST.FullVisitor<Object, MEM.Neki> {
 
     @Override
     public Object visit(AST.CompDefn compDefn, Neki arg) {
-        Neki n = new MEM().new Neki(arg.depth+1, arg.size, arg.offset);
-        compDefn.type.accept(this, n);
-        var label = new MEM.Label(compDefn.name);
         TYP.Type b = SemAn.ofType.get(compDefn);
-
         long size = b.accept(sizeEval, null);
+        
         var access = new MEM.RelAccess(size, arg.offset, -1);
+        if(b instanceof TYP.RecType){
+            Neki n = new Neki(arg.depth, size, 0);
+            compDefn.type.accept(this, n);
+            arg.offset = n.size;
+        }else{
+            arg.offset += size;
+            //naprej
+            compDefn.type.accept(this, arg);
+        }
+        
         return Memory.accesses.put(compDefn, access);
     }
 

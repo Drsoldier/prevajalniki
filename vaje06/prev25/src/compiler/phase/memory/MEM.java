@@ -6,7 +6,7 @@ package compiler.phase.memory;
  * @author bostjan.slivnik@fri.uni-lj.si
  */
 public class MEM {
-	public class Neki{
+	public static class Neki{
 		long depth;
 		long size;
 		long offset;
