@@ -37,28 +37,62 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 			}
 			
 		}
+		//SemAn.isAddr.put(ptrType, true);
+		//SemAn.isConst.put(ptrType, false);
+
 		return null;
 	}
+	@Override
+	public TYP.Type visit(AST.ArrType arrType, Mode arg) {
+		Long c = Long.parseLong(arrType.numElems);
+		TYP.Type tmp = arrType.elemType.accept(this, arg);
+		if(c<1){
+			throw new Report.Error("Number of elements has to be at least 1!");
+		}
+		if(tmp instanceof TYP.VoidType){
+			throw new Report.Error(arrType, "Void array cannot exist!");
+			
+		}
+		//SemAn.isAddr.put(arrType, true);	
+		//SemAn.isConst.put(arrType, false);
+		return null;
+	}
+
 	// ----- Expressions -----
 
 	@Override
 	public TYP.Type visit(AST.ArrExpr arrExpr, Mode arg) {
-		if(arg == Mode.RESOLVE){
-			TYP.Type a = SemAn.defAt.get(arrExpr.arrExpr).accept(this, arg);
-			TYP.Type b = SemAn.defAt.get(arrExpr.idx).accept(this, arg);
-			if(a instanceof TYP.ArrType ){
-				if(b.actualType() == TYP.IntType.type){
-					return SemAn.isType.put(arrExpr, a);
-				}else{
-					throw new Report.Error(arrExpr, "Not an int");
 
-				}
+		TYP.Type a = arrExpr.arrExpr.accept(this, arg);
+		if(a instanceof TYP.NameType){
+			a = a.actualType();
+		}if(a == null){
+			Report.info("SHIT");
+		}
+		if(!SemAn.isAddr.get(arrExpr.arrExpr)){
+			throw new Report.Error(arrExpr, "Cannot access array on an expression that doesnt exist");
+		}
+		TYP.Type b = arrExpr.idx.accept(this, arg);
+		SemAn.isAddr.put(arrExpr, true);
+		SemAn.isConst.put(arrExpr, false);
+		if(b instanceof TYP.NameType){
+			b = b.actualType();
+		}if(b == null){
+			Report.info("FUCK");
+		}
+		if(a instanceof TYP.ArrType){
+			if(b instanceof TYP.IntType){
+				var c = ((TYP.ArrType)a).elemType;
+				return SemAn.ofType.put(arrExpr, c);
 
 			}else{
-				throw new Report.Error(arrExpr, "Not an array");
+				throw new Report.Error(arrExpr, "Not an int");
+
 			}
+
 		}
-		return null;
+		throw new Report.Error(arrExpr, "Not an array");
+
 	}
 
 	@Override
@@ -137,13 +171,34 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 			if(b instanceof TYP.VoidType){
 				throw new Report.Error(strType, "Components cannot be void");
 			}
-
-			
+			SemAn.isAddr.put(comp, true);
+			SemAn.isConst.put(comp, false);
 
 			typelist.addLast(b);
 		}
 		
+		SemAn.isAddr.put(strType, true);
+		SemAn.isConst.put(strType, false);
+		return trenList;
+	}
+	@Override
+	public TYP.Type visit(AST.UniType uniType, Mode arg) {
+		TYP.Type trenList = SemAn.isType.get(uniType);
+		LinkedList<TYP.Type> typelist = new LinkedList<TYP.Type>();
 
+		for (Node comp : uniType.comps) {
+			TYP.Type b = comp.accept(this, arg);
+			AST.CompDefn compDefn = (AST.CompDefn)comp;
+			if(b instanceof TYP.VoidType){
+				throw new Report.Error(uniType, "Components cannot be void");
+			}
+			typelist.addLast(b);
+			SemAn.isAddr.put(comp, true);
+			SemAn.isConst.put(comp, false);
+
+		}
+		SemAn.isAddr.put(uniType, true);
+		SemAn.isConst.put(uniType, false);
 		return trenList;
 	}
 
@@ -158,7 +213,10 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 	public TYP.Type visit(AST.BinExpr binExpr, Mode arg) {	
 		TYP.Type a = binExpr.fstExpr.accept(this, arg);
 		TYP.Type b = binExpr.sndExpr.accept(this, arg);
-
+		Boolean isConst = SemAn.isConst.get(binExpr.fstExpr);
+		Boolean isConst2 = SemAn.isConst.get(binExpr.sndExpr);
+		SemAn.isAddr.put(binExpr, false);
+		SemAn.isConst.put(binExpr, isConst || isConst2);
 		if (compTypes(a, b) && !(a instanceof TYP.RecType)) {
 			
 			if(b instanceof TYP.BoolType || b instanceof TYP.IntType || b instanceof TYP.CharType || b instanceof TYP.PtrType || b instanceof TYP.NameType || b instanceof TYP.VoidType){
@@ -267,7 +325,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 	@Override
 	public TYP.Type visit(AST.CompExpr compExpr, Mode arg) {
 		TYP.Type recType = compExpr.recExpr.accept(this, arg).actualType();
-		if(SemAn.isAddr.get(compExpr.recExpr)){
+		Boolean tmp = SemAn.isAddr.get(compExpr.recExpr);
+		if(!tmp){
 			throw new Report.Error(compExpr, "Cannot access component on an expression that doesnt exist");
 		}
 		//Report.info(recType.toString());
@@ -336,6 +395,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		if(tmp2.actualType() != temp.actualType()){
 			//throw new Report.Error("Coercion failed");
 		}
+		SemAn.isAddr.put(pfxExpr, true);
+		SemAn.isConst.put(pfxExpr, false);
 		return SemAn.ofType.put(pfxExpr, temp);
 	}
 
@@ -382,13 +443,14 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		
 		TYP.Type temp = sfxExpr.subExpr.accept(this,  Mode.RESOLVE);
 		//Report.info(temp.toString());
+		SemAn.isAddr.put(sfxExpr, true);
+		SemAn.isConst.put(sfxExpr, false);
 		if(temp.actualType() == TYP.VoidType.type){
 			throw new Report.Error(sfxExpr,"Unable to dereference a null pointer");
 		}
 		if(temp instanceof TYP.PtrType a){
 			return SemAn.ofType.put(sfxExpr, a.baseType);
 		}
-		
 		
 		return SemAn.ofType.put(sfxExpr, temp);
 		
@@ -400,6 +462,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		if(temp instanceof TYP.VoidType){
 			throw new Report.Error(sizeExpr,"Unable to dereference a null pointer");
 		}
+		SemAn.ofType.put(sizeExpr, TYP.IntType.type);
 		SemAn.isAddr.put(sizeExpr, false);
 		SemAn.isConst.put(sizeExpr, true);
 		return null;
@@ -437,7 +500,6 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 			b = b.actualType();
 		}
 		if(a == null || b == null){
-			//TODO FIX THIS TO FALSE
 			return false;
 		}
 		//Report.info("first arg val:" + a.toString() + " second arg val:" + b.toString());

@@ -76,9 +76,10 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 			}
 			if(tmp instanceof TYP.VoidType){
 				throw new Report.Error(arrType, "Void array cannot exist!");
-			
+				
 			}
 			TYP.ArrType neki = new TYP.ArrType(tmp, c);
+			
 			return SemAn.isType.put(arrType, neki);
 		}
 		return null;
