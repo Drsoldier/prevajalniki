@@ -171,42 +171,32 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 			if(b instanceof TYP.VoidType){
 				throw new Report.Error(strType, "Components cannot be void");
 			}
-			SemAn.isAddr.put(comp, true);
-			SemAn.isConst.put(comp, false);
 
 			typelist.addLast(b);
 		}
 		
-		SemAn.isAddr.put(strType, true);
-		SemAn.isConst.put(strType, false);
 		return trenList;
 	}
 	@Override
 	public TYP.Type visit(AST.UniType uniType, Mode arg) {
 		TYP.Type trenList = SemAn.isType.get(uniType);
 		LinkedList<TYP.Type> typelist = new LinkedList<TYP.Type>();
-
 		for (Node comp : uniType.comps) {
-			TYP.Type b = comp.accept(this, arg);
 			AST.CompDefn compDefn = (AST.CompDefn)comp;
-			if(b instanceof TYP.VoidType){
-				throw new Report.Error(uniType, "Components cannot be void");
-			}
-			typelist.addLast(b);
-			SemAn.isAddr.put(comp, true);
-			SemAn.isConst.put(comp, false);
+			TYP.Type c = SemAn.ofType.get(compDefn);
+			typelist.addLast(c);	
 
 		}
-		SemAn.isAddr.put(uniType, true);
-		SemAn.isConst.put(uniType, false);
 		return trenList;
 	}
 
 	@Override
 	public TYP.Type visit(AST.CompDefn compDefn, Mode arg) {
-		SemAn.isAddr.put(compDefn, true);
-		SemAn.isConst.put(compDefn, false);
 		TYP.Type a = compDefn.type.accept(this, arg);
+		
+		if(a==null)
+			return SemAn.ofType.put(compDefn, TYP.IntType.type);
+		
 		return SemAn.ofType.put(compDefn, a);
 	}
 	@Override
@@ -282,7 +272,12 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		ArrayList<TYP.Type> parTypes = new ArrayList<TYP.Type>();
 		SemAn.isAddr.put(callExpr, false);
 		SemAn.isConst.put(callExpr, false);
-		TYP.Type funType = callExpr.funExpr.accept(this, arg);
+		callExpr.funExpr.accept(this, arg);
+		TYP.Type funType = SemAn.ofType.get(callExpr.funExpr);
+		
+		if(funType instanceof TYP.NameType){
+			funType = funType.actualType();
+		}
 		if(!(funType instanceof TYP.FunType)){
 			throw new Report.Error(callExpr,"Expected a function");
 		}

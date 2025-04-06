@@ -242,7 +242,7 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 			if(b instanceof TYP.VoidType){
 				throw new Report.Error(varDefn, "Type cannot be void");
 			}
-			return SemAn.ofType.put(varDefn, b.actualType());
+			return SemAn.ofType.put(varDefn, b);
 		}
 		return null;
 	}

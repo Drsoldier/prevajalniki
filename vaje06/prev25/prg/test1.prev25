@@ -117,7 +117,7 @@ fun funAllGood(par1: int, par2: ptrInt, par3: ptrInt) : int =
     if varInt != 10 then varInt = varInt / varInt end,
     if 10 != varInt then varInt = varInt % varInt end,
     if varStructIntChar.comp1 > 10 then varInt = varInt + varInt end,
-    #if varFunIntToInt(10) <= varInt then varInt = varInt - varInt end,
+    if varFunIntToInt(10) <= varInt then varInt = varInt - varInt end,
 
     return {varFunIntToInt : int}
 

@@ -6,22 +6,7 @@ package compiler.phase.memory;
  * @author bostjan.slivnik@fri.uni-lj.si
  */
 public class MEM {
-	public static class Neki{
-		long depth;
-		long size;
-		long offset;
-
-		public Neki(long depth, long size, long offset) {
-			this.depth = depth;
-			this.size = size;
-			this.offset = offset;
-		}
-		public Neki() {
-			this.depth = 0;
-			this.size = 0;
-			this.offset = 0;
-		}
-	}
+	
 	/**
 	 * A stack frame.
 	 * 
