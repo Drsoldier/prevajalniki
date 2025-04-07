@@ -30,10 +30,13 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
             arg = new Neki();
         
         for (final AST.Node node : nodes)   {
-            if(node instanceof AST.VarDefn a){
-                //Report.info(a, "Visiting varDefn: " + a.name + ", " + arg.toString());
-            }
+            /*if(node instanceof AST.VarDefn a){
+                Report.info(a, "Visiting varDefn: " + a.name + ", " + arg.toString());
+            }*/
             node.accept(this, arg);
+            /*if(node instanceof AST.VarDefn a){
+                Report.info(node, "State of arg:" +  arg.toString());
+            }*/
 		}
         
 		
@@ -42,50 +45,75 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
     
     @Override
     public Object visit(AST.VarDefn varDefn, Neki arg) {
+        long correctedOffset = 0;
         varDefn.type.accept(this, arg);
         long size = SemAn.ofType.get(varDefn).accept(sizeEval, null);
+        //Report.info("size:" + size);
         //Prištej do večkratnika 8
-        size = size + (8-size%8);
+        correctedOffset = size;
+        if(correctedOffset%8 != 0 && !arg.isInFunctionParam){
+            correctedOffset = (correctedOffset/8)*8 +8;
+        }
+        //size = size + (8-size%8);
+        //Report.info("correctedOffset after arithmetic:" + correctedOffset);
+
         long prefix = -1;
         if(arg.isInFunctionParam){
             prefix = 1;
         }
 
-        //Report.info(varDefn, "Visiting varDefn: " + varDefn.name + ", " + arg.toString());
+        //Report.info(varDefn, "Visiting varDefn: " + varDefn.name + ", " + arg.toString() + ", size: " + size);
         if(arg.depth < 0){
             return Memory.accesses.put(varDefn, new MEM.AbsAccess(size, new MEM.Label(varDefn.name)));
         }
-        arg.offset += size*prefix;
+        arg.offset += correctedOffset*prefix;
         return Memory.accesses.put(varDefn, new MEM.RelAccess(size, arg.offset, arg.depth));
         
     }
     
     @Override
     public Object visit(AST.DefFunDefn defFunDefn, Neki arg) {
-        var label = new MEM.Label(defFunDefn.name);
+        MEM.Label label;
+        int k = 0;
         //var size = Memory.accesses.get(defFunDefn).size;
-        var o = arg.depth;
-        arg.depth+=1;
-        var curSize = arg.size;
-        var currOffset = arg.offset;
-        MEM.Frame access = new MEM.Frame(label, arg.depth, 0, curSize, curSize);
-        arg.changeState();
-        Report.info(defFunDefn,"current args"+ arg.toString());
-        //Report.info("State of arg:" +  arg.toString());
-        defFunDefn.pars.accept(this, arg);
-        //Report.info("going out of params");
-        arg.changeState();
-        arg.depth+=1;
-        //Report.info("going into statements");
-        //Report.info("State of arg:" +  arg.toString());
+        if(!arg.isInFunction){
+            arg.isInFunction = true;
+            k = 1;
+            label = new MEM.Label(defFunDefn.name);
+            arg.depth+=2;
+        }else{
+            label = new MEM.Label();
+        }
+        Report.info(defFunDefn, "arg state before params: " + arg.toString());
+        var oldDepth = arg.depth;
+        //arg.depth+=1;
+        var sizeOf = arg.size;
+        var offsetWhenEntry = arg.offset;
         arg.offset = 0;
+        arg.changeState();
+        defFunDefn.pars.accept(this, arg);
+        var argSize = arg.size;
+        arg.offset = 0;
+        arg.changeState();
+        //Report.info("going into statements");
+        Report.info("In function " + label.name+", with state of args:" +  arg.toString() + ", old size:" + sizeOf);
         defFunDefn.stmts.accept(this, arg);
-        //Report.info("going out of statements");
-        arg.depth-=1;
-        arg.offset = currOffset;
-        //var neki = Memory.accesses.get(defFunDefn);
-        //Report.info("null"+neki);
-        arg.depth = o;
+        arg.isInFunction = false;
+        var sizeOfFunction = sizeOf-arg.offset + argSize + 2*8;
+        Report.info(defFunDefn, "AAAAAAAAAAAAAAAAAAAAAAAAA-arg state after params: " + arg.toString());
+        MEM.Frame access = new MEM.Frame(
+            label, //Label
+            arg.depth, //Depth of the function
+            sizeOf-arg.offset, //Size of local variables
+            argSize, //Size of arguments
+            sizeOfFunction //Size of the function
+        );
+        //arg.depth-=2;
+        if(k==1){
+            arg.isInFunction = false;
+        }
+        arg.offset = offsetWhenEntry;
+        arg.depth = oldDepth;
         return Memory.frames.put(defFunDefn, access);
     }
 
@@ -93,12 +121,16 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
     public Object visit(AST.ExtFunDefn extFunDefn, Neki arg) {
         var label = new MEM.Label(extFunDefn.name);
         //var size = Memory.accesses.get(defFunDefn).size;
-        var curDepth = arg.depth+2;
+        var oldDepth = arg.depth;
         //arg.depth+=1;
+        arg.depth += 2;
         var oldSize = arg.size;
         var curOffset = arg.offset;
+        arg.isInFunctionParam = true;
+        arg.offset = 0;
         extFunDefn.pars.accept(this, arg);
-        arg.depth=curDepth;
+        arg.depth=oldDepth;
+        arg.isInFunctionParam = false;
         arg.offset = curOffset;
         arg.size = oldSize;
         return null;
@@ -117,11 +149,17 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
 
         var b = new Neki();
         b.isInFunctionParam = arg.isInFunctionParam;
-        Report.warning("in params");
+        //Report.warning("in params");
         b.depth = arg.depth;
+        b.offset = arg.offset;
+        var tmpSize = arg.size;
         var size = SemAn.ofType.get(parDefn);
         long l = size.accept(sizeEval, null);
-
+        long correctedOffset = l;
+        if(correctedOffset%8 != 0 ){
+            correctedOffset = (correctedOffset/8)*8 +8;
+        }
+        Report.info(parDefn, "Visiting parDefn: " + parDefn.name + ", " + arg.toString() + ", size: " + l);
         long prefix = -1;
         //offset is positive
         if(arg.isInFunctionParam){
@@ -129,16 +167,17 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
         }
         
         if(size instanceof TYP.RecType){
-            Neki n = new Neki(arg.depth, l, arg.offset+l*prefix);
+            Neki n = new Neki(arg.depth, l, arg.offset+correctedOffset*prefix);
             parDefn.type.accept(this, n);
             arg.offset = n.size;
         }else{
-            arg.offset += l;
+            b.offset += correctedOffset;
             parDefn.type.accept(this, b);
+            arg.offset = b.offset;
         }
-       
-
-        var t = new MEM.RelAccess(l, arg.offset+l*prefix, arg.depth);
+        arg.size += l;
+        Report.info(parDefn, "Visiting parDefn: " + parDefn.name + ", " + arg.toString() + ", size: " + l);
+        var t = new MEM.RelAccess(l, arg.offset, arg.depth);
         return Memory.accesses.put(parDefn, t);
     }
 
@@ -204,21 +243,15 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
     @Override
     public Object visit(AST.CompDefn compDefn, Neki arg) {
 
-        TYP.Type b = SemAn.ofType.get(compDefn);
+        TYP.Type b = SemAn.isType.get(compDefn.type);
         long size = b.accept(sizeEval, null);
         long oo = size;
-        if(size%8 != 0){
+        if(size%8 != 0 && !arg.isInFunctionParam){
             oo = (size/8)*8 +8;
         }
         if(b instanceof TYP.RecType){
             Neki n = new Neki(arg.depth, size, 0);
             compDefn.type.accept(this, n);
-            /*if(n.size%8 != 0){
-                n.size = n.size + (8-n.size%8);
-            }else{
-                size = n.size;
-            }*/
-            //arg.offset += n.size;
         }else{
             //naprej
             compDefn.type.accept(this, arg);
@@ -234,9 +267,19 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
     public Object visit(AST.AtomExpr atomExpr, Neki arg) {
         switch (atomExpr.type) {
         case STR:
-            var size = (long)(atomExpr.value.length() + 1);
-            var access2 = new MEM.Temp();
-            break;
+            long size = (long)(atomExpr.value.length());
+            String str = atomExpr.value;
+            var lbl = new MEM.Label();
+            var idkAnymore = new MEM.AbsAccess(size-1, lbl, str);
+            //var idkAnymore = new MEM.RelAccess(1l, 1l, 1l);
+            //Report.info(idkAnymore.label.name +  " " + str);
+            var node = atomExpr;
+            //AST.Type node = atomExpr.type.accept(this, null);
+            if(atomExpr instanceof AST.Node){   
+                Report.info("FUCK");
+            }
+            Memory.strings.put(node, idkAnymore);
+            break;    
         default:
             break;
         }

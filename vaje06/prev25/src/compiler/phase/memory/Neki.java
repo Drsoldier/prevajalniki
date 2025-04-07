@@ -5,13 +5,14 @@ public class Neki{
     public long size;
     public long offset;
     public boolean isInFunctionParam;
-    
+    public boolean isInFunction;
 
     public Neki(long depth, long size, long offset) {
         this.depth = depth;
         this.size = size;
         this.offset = offset;
         this.isInFunctionParam = false;
+        this.isInFunction = false;
     }
     public Neki(Neki n){
         this.depth = n.depth;
@@ -28,8 +29,13 @@ public class Neki{
     void changeState(){
         isInFunctionParam = !isInFunctionParam;
     }
+
+
+    void changeIsInFunctionState(){
+        isInFunction = !isInFunction;
+    }
     @Override
     public String toString(){
-        return "depth: " + depth + ", size: " + size + ", offset: " + offset +", isInFunctionParam: " + isInFunctionParam;
+        return "depth: " + depth + ", size: " + size + ", offset: " + offset +", isInFunctionParam: " + isInFunctionParam + ", isInFunction:" + isInFunction;
     }
 }
