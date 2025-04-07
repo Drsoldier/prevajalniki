@@ -184,8 +184,8 @@ public class NameResolver implements AST.FullVisitor<Object, NameResolver.Mode> 
 
 	@Override
 	public Object visit(LetStmt letStmt, Mode arg) {
-	symbTable.newScope();
 		if (arg == Mode.RESOLVE) {
+			symbTable.newScope();
 			for (Node node : letStmt.defns) {
 				if (node instanceof TypDefn) {
 					node.accept(this, Mode.DECLARE);

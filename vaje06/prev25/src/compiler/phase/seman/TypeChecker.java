@@ -216,7 +216,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 					}
 
 				}catch(Exception e){
-
+					Report.info("Error in b definition");
 				}
 				try{
 					while(a instanceof TYP.NameType){
@@ -224,7 +224,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 					}
 
 				}catch(Exception e){
-
+					Report.info("Error in a definition");
 				}
 				//Report.info(a.toString() + " " + b.toString());
 				switch(binExpr.oper){
@@ -259,12 +259,16 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 			//return SemAn.ofType.put(binExpr, a);
 
 		}else{
-			if(a==null)
+			if(a==null){
+				Report.info("a is null");
 				return null;
-			if(b==null)
+			}
+			if(b==null){
+				Report.info("b is null");
 				return null;
+			}
 			throw new Report.Error(binExpr, "Cannot coerce " + a.actualType().toString() + " into " + b.actualType().toString());
-		}//return SemAn.ofType.put(binExpr, TYP.BoolType.type);
+		}
 	}
 
 	@Override
@@ -457,10 +461,9 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		if(temp instanceof TYP.VoidType){
 			throw new Report.Error(sizeExpr,"Unable to dereference a null pointer");
 		}
-		SemAn.ofType.put(sizeExpr, TYP.IntType.type);
 		SemAn.isAddr.put(sizeExpr, false);
 		SemAn.isConst.put(sizeExpr, true);
-		return null;
+		return SemAn.ofType.put(sizeExpr, TYP.IntType.type);
 	}
 
 
@@ -562,7 +565,6 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		TYP.Type dst = assignStmt.dstExpr.accept(this, arg);
 		TYP.Type src = assignStmt.srcExpr.accept(this, arg);
 
-		
 		if(dst instanceof TYP.FunType){
 			throw new Report.Error(assignStmt, "Left assignment cannot be a function"); 
 		}if(src instanceof TYP.FunType){

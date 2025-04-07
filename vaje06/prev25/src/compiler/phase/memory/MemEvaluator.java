@@ -74,38 +74,48 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
     @Override
     public Object visit(AST.DefFunDefn defFunDefn, Neki arg) {
         MEM.Label label;
+        
         int k = 0;
+        var oldDepth = arg.depth;
         //var size = Memory.accesses.get(defFunDefn).size;
-        if(!arg.isInFunction){
+        //Report.info(defFunDefn, "arg state before params: " + arg.toString());
+        if(arg.depth < 0){
+            arg.depth = 0;
+        }
+        if(arg.isInFunction){
+            label = new MEM.Label();
+        }else{
             arg.isInFunction = true;
             k = 1;
             label = new MEM.Label(defFunDefn.name);
-            arg.depth+=2;
-        }else{
-            label = new MEM.Label();
         }
-        Report.info(defFunDefn, "arg state before params: " + arg.toString());
-        var oldDepth = arg.depth;
-        //arg.depth+=1;
-        var sizeOf = arg.size;
+
+        var sizeOfBeforePars = arg.size;
         var offsetWhenEntry = arg.offset;
         arg.offset = 0;
-        arg.changeState();
+        arg.isInFunctionParam = true;
+        var oldArgSize = arg.size;
+
+        arg.size = 0;
+        //parameters
         defFunDefn.pars.accept(this, arg);
-        var argSize = arg.size;
+        arg.isInFunctionParam = false;
+        if(arg.size%8 != 0){
+            arg.size = (arg.size/8)*8 + 8;
+        }
         arg.offset = 0;
-        arg.changeState();
-        //Report.info("going into statements");
-        Report.info("In function " + label.name+", with state of args:" +  arg.toString() + ", old size:" + sizeOf);
+        //arg.changeState();
+        arg.depth+=1;
+        
+        //statements
+        //Report.info(defFunDefn,"In function " + label.name+", with state of args:" +  arg.toString() + ", old size:" + sizeOfBeforePars);
         defFunDefn.stmts.accept(this, arg);
-        arg.isInFunction = false;
-        var sizeOfFunction = sizeOf-arg.offset + argSize + 2*8;
-        Report.info(defFunDefn, "AAAAAAAAAAAAAAAAAAAAAAAAA-arg state after params: " + arg.toString());
+        var sizeOfFunction = sizeOfBeforePars-arg.offset + arg.size + 2*8;
         MEM.Frame access = new MEM.Frame(
             label, //Label
-            arg.depth, //Depth of the function
-            sizeOf-arg.offset, //Size of local variables
-            argSize, //Size of arguments
+            arg.depth-1, //Depth of the function
+            sizeOfBeforePars-arg.offset, //Size of local variables
+            arg.size, //Size of arguments
             sizeOfFunction //Size of the function
         );
         //arg.depth-=2;
@@ -114,6 +124,9 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
         }
         arg.offset = offsetWhenEntry;
         arg.depth = oldDepth;
+        arg.size = oldArgSize;
+        //arg.changeState();
+        //Report.info(defFunDefn, "AAAAAAAAAAAAAAAAAAAAAAAAA-arg state after params: " + arg.toString());
         return Memory.frames.put(defFunDefn, access);
     }
 
@@ -159,7 +172,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
         if(correctedOffset%8 != 0 ){
             correctedOffset = (correctedOffset/8)*8 +8;
         }
-        Report.info(parDefn, "Visiting parDefn: " + parDefn.name + ", " + arg.toString() + ", size: " + l);
+        //Report.info(parDefn, "Visiting parDefn: " + parDefn.name + ", " + arg.toString() + ", size: " + l);
         long prefix = -1;
         //offset is positive
         if(arg.isInFunctionParam){
@@ -176,7 +189,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
             arg.offset = b.offset;
         }
         arg.size += l;
-        Report.info(parDefn, "Visiting parDefn: " + parDefn.name + ", " + arg.toString() + ", size: " + l);
+        //Report.info(parDefn, "Visiting parDefn: " + parDefn.name + ", " + arg.toString() + ", size: " + l);
         var t = new MEM.RelAccess(l, arg.offset, arg.depth);
         return Memory.accesses.put(parDefn, t);
     }
@@ -268,7 +281,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
         switch (atomExpr.type) {
         case STR:
             long size = (long)(atomExpr.value.length());
-            String str = atomExpr.value;
+            String str = atomExpr.value.substring(1, atomExpr.value.length()-1);
             var lbl = new MEM.Label();
             var idkAnymore = new MEM.AbsAccess(size-1, lbl, str);
             //var idkAnymore = new MEM.RelAccess(1l, 1l, 1l);
@@ -276,7 +289,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
             var node = atomExpr;
             //AST.Type node = atomExpr.type.accept(this, null);
             if(atomExpr instanceof AST.Node){   
-                Report.info("FUCK");
+                //Report.info("FUCK");
             }
             Memory.strings.put(node, idkAnymore);
             break;    
