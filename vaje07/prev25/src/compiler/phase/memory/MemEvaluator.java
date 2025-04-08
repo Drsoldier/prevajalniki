@@ -202,6 +202,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
         arg.offset = o;
 		return null;
 	}
+
 	@Override
 	public TYP.Type visit(AST.UniType uniType, Neki arg) {
         var o = arg.offset;
@@ -235,7 +236,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
             if(n.depth >= 0){
                 var access = new MEM.RelAccess(size, n.size, n.depth);
                 //return Memory.accesses.put(typDefn, access);
-                return null;
+                return access;
             }
             return null;
             //return Memory.accesses.put(typDefn, new MEM.AbsAccess(size, new MEM.Label(typDefn.name)));
@@ -250,7 +251,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
         //var size = SemAn.ofType.get(typDefn).accept(sizeEval, null);
             var access = new MEM.AbsAccess(-1, new MEM.Label(typDefn.name));
         //Memory.accesses.put(typDefn, access);
-        return null;
+        return access;
     }
 
     @Override

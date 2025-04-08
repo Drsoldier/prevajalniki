@@ -304,7 +304,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 	public TYP.Type visit(AST.CastExpr castExpr, Mode arg) {
 		
 		castExpr.expr.accept(this,arg);
-		SemAn.defAt.get(castExpr.expr).accept(this, arg);
+		//SemAn.defAt.get(castExpr.expr).accept(this, arg);
 		boolean isAddr = SemAn.isAddr.get(castExpr.expr);
 		boolean isConst = SemAn.isConst.get(castExpr.expr);
 
@@ -427,7 +427,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 		}
 
 		if(!noError){
-			throw new Report.Error(defFunDefn,"Function returns wrong type");
+			//throw new Report.Error(defFunDefn,"Function returns wrong type");
 			//throw new Report.Error(defFunDefn,"Function returns wrong type");
 		}
 		if(!compTypes(returnType, a)){
