@@ -172,20 +172,45 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
 
     }
 
+
+
+
     @Override
     public IMC.Expr visit(AST.NameExpr nameExpr, Object arg) {
         var tmp = SemAn.defAt.get(nameExpr);
+        if(tmp!=null){
+            Report.warning(nameExpr,"b"+ tmp.toString());
+        }else{
+            Report.warning(nameExpr, "null");
+
+        }
         if(tmp instanceof AST.DefFunDefn){
-            var tmp2 = ImcGen.entryLabel.get(tmp);
-            var neki = new IMC.NAME(tmp2);
+            var x = Memory.frames.get(tmp);
+            var neki = new IMC.NAME(x.label);
             ((NekiNovega)arg).lastExpr = neki;
             return ImcGen.expr.put(nameExpr, neki);
+        }else if(tmp instanceof AST.ExtFunDefn b){
+            //var n = new IMC.NAME(Memory.frames.get(nameExpr).label);
+            var n = new IMC.NAME(new MEM.Label());
+            return ImcGen.expr.put(nameExpr, n);
         }
         TYP.Type t = SemAn.ofType.get(nameExpr);
         NekiNovega nekiNovega = (NekiNovega)arg;
-        var neki = (MEM.Access)Memory.accesses.get(tmp);
-        IMC.Expr nekaj = null;
+        if(!(tmp instanceof AST.Node)){
+            throw new Report.Error("How did we get here?");
+        }else{
+            Report.info("All good");
+        }
+        Object neki;
+        Report.warning(nameExpr, "Crashes? Find out in the next episode of dragon ball z");
+        Report.info(tmp.toString());
+        if(!(tmp instanceof AST.ParDefn))
+            neki = Memory.accesses.get(tmp);
+        else
+            neki = tmp.accept(this, arg);
 
+        IMC.Expr nekaj = null;
+        Report.warning(nameExpr, "It didnt crash :D");
         if(neki instanceof MEM.AbsAccess) {
             nekaj = new IMC.NAME(((MEM.AbsAccess) neki).label);
         }
@@ -199,6 +224,8 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
             );
             nekaj = binop;
 
+        }else{
+            Report.info(nameExpr, "nekaj je:" + (nekaj == null ? "null" : nekaj.toString()));
         }
         if(t instanceof TYP.BoolType || t instanceof TYP.CharType){
             var n = new IMC.MEM1(nekaj);
@@ -211,7 +238,38 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
 
         return ImcGen.expr.put(nameExpr, m8);
     }
-    
+    public AST.Node getObject(String str, AST.RecType b){
+        
+        for(var n : b.comps){
+
+            if(n.type instanceof AST.RecType c){
+                return getObject(str, c);
+            }
+            if(n.name.equals(str)){
+                return n;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Object visit(AST.CompExpr compExpr, Object arg){
+        var neki = (IMC.Expr)compExpr.recExpr.accept(this, arg);
+        if(neki instanceof IMC.MEM1 a){
+            neki = a.addr;
+        }else if( neki instanceof IMC.MEM8 a){
+            neki = a.addr;
+        }else{
+            Report.warning(neki.toString());
+            //throw new Report.Error(compExpr, "Something went wrong with the compExpr");
+            Report.warning(compExpr, "Something went wrong with the compExpr");
+        }
+        //var tmp = Memory.accesses.get(getObject(compExpr.name, compExpr));
+        IMC.BINOP binop = new IMC.BINOP(IMC.BINOP.Oper.ADD, neki, new IMC.CONST(0));
+        IMC.MEM8 m = new IMC.MEM8(binop);
+        return ImcGen.expr.put(compExpr, m);
+    }
+
     @Override
     public Object visit(AST.SfxExpr sfxExpr, Object arg) {
         var neki = (IMC.Expr)sfxExpr.subExpr.accept(this, arg);
@@ -430,7 +488,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         Report.info(t.toString());
 
 
-        return ImcGen.expr.put(arrExpr, binop);
+        return ImcGen.expr.put(arrExpr, new IMC.MEM8((binop)));
     }
 
     @Override

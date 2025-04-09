@@ -146,7 +146,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
         arg.isInFunctionParam = false;
         arg.offset = curOffset;
         arg.size = oldSize;
-        return null;
+        return label;
     }
 
     /*@Override
