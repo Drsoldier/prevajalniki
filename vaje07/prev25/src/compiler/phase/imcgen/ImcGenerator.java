@@ -51,7 +51,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
     public Object visit(AST.LetStmt letStmt, Object arg) {
         //var neki = new NekiNovega(letStmt);
         Vector<IMC.Stmt> vec = new Vector<IMC.Stmt>();
-        Report.info("null");
+        //Report.info("in let stmt");
         for (var n : letStmt.defns){
             n.accept(this, arg);
         }
@@ -117,10 +117,10 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         var b = new IMC.CJUMP(neki, vec5, vec7);
         var l = new IMC.STMTS(vec);
         vec3.addLast(b);
-        vec3.addLast(l4);
+        vec3.addLast(ooo);
         vec3.addLast(l);
-        vec3.addLast(new IMC.JUMP(vec5));
-        vec3.addLast(new IMC.LABEL(new MEM.Label()));
+        vec3.addLast(new IMC.JUMP(vec7));
+        vec3.addLast(new IMC.LABEL(l3));
         return ImcGen.stmt.put(ifThenStmt, new IMC.STMTS(vec3));
 
     }
@@ -131,6 +131,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         NekiNovega nekiNovega = (NekiNovega)arg;
         Vector<IMC.Expr> vec2 = new Vector<IMC.Expr>();
         Vector<IMC.Stmt> vec = new Vector<IMC.Stmt>();
+        //Report.info(ifThenElseStmt, "In ifThenElseStmt");
         IMC.Expr vec5 = null;
         IMC.Expr vec7 = null;
         var l1 = new MEM.Label();
@@ -142,6 +143,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
             IMC.Stmt t =(IMC.Stmt) n.accept(this, arg);
             vec.addLast(t);
             vec2.addLast(((NekiNovega)arg).lastExpr);
+            //Report.info(n, "Finished with stmt in THEN");
         }
         var l3 = new MEM.Label();
         IMC.LABEL l4 = new IMC.LABEL(l3);
@@ -156,9 +158,12 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         vec3.addLast(new IMC.JUMP(vec5));
         vec3.addLast(new IMC.LABEL(new MEM.Label()));
         Vector<IMC.Stmt> tmp = new Vector<IMC.Stmt>();
-        for (var n : ifThenElseStmt.thenStmt){
+        for (var n : ifThenElseStmt.elseStmt){
             IMC.Stmt t =(IMC.Stmt) n.accept(this, arg);
+            //Report.info(n, t.toString());
             tmp.addLast(t);
+            //Report.info(n, "Finished with stmt in ELSE");
+
         }
         for(var n : tmp){
             vec3.addLast(n);
@@ -177,13 +182,15 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
 
     @Override
     public IMC.Expr visit(AST.NameExpr nameExpr, Object arg) {
+        //Report.warning(nameExpr,"Trying to get nameExpr");
         var tmp = SemAn.defAt.get(nameExpr);
         if(tmp!=null){
-            Report.warning(nameExpr,"b"+ tmp.toString());
+            //Report.warning(nameExpr, tmp.toString());
         }else{
-            Report.warning(nameExpr, "null");
+            //Report.warning(nameExpr, "null");
 
         }
+        //Report.warning(tmp.toString());
         if(tmp instanceof AST.DefFunDefn){
             var x = Memory.frames.get(tmp);
             var neki = new IMC.NAME(x.label);
@@ -195,28 +202,32 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
             return ImcGen.expr.put(nameExpr, n);
         }
         TYP.Type t = SemAn.ofType.get(nameExpr);
+        if(t instanceof TYP.NameType){
+            t = t.actualType();
+        }
         NekiNovega nekiNovega = (NekiNovega)arg;
+        //Report.info(nameExpr,"t-tostring:"+t.toString());
         if(!(tmp instanceof AST.Node)){
             throw new Report.Error("How did we get here?");
         }else{
-            Report.info("All good");
+            //Report.info(nameExpr,"All good");
         }
         Object neki;
-        Report.warning(nameExpr, "Crashes? Find out in the next episode of dragon ball z");
-        Report.info(tmp.toString());
-        if(!(tmp instanceof AST.ParDefn))
-            neki = Memory.accesses.get(tmp);
-        else
-            neki = tmp.accept(this, arg);
+        //Report.warning(nameExpr, "Crashes? Find out in the next episode of dragon ball z");
+        //Report.info(nameExpr, tmp.toString() + " aaaaaaaaaaaaaaaaa");
 
+
+        neki = Memory.accesses. get(tmp);
+        //Report.warning(nameExpr, neki.toString());
         IMC.Expr nekaj = null;
-        Report.warning(nameExpr, "It didnt crash :D");
+        //Report.warning(nameExpr, "It didnt crash :D");
         if(neki instanceof MEM.AbsAccess) {
             nekaj = new IMC.NAME(((MEM.AbsAccess) neki).label);
+            //Report.info(nameExpr, "trying to define an external variable" + nekaj.toString());
         }
         else if (neki instanceof MEM.RelAccess) {
             var getFrame = Memory.frames.get(nekiNovega.funDefn);
-            IMC.NAME n = new IMC.NAME(getFrame.label);
+            IMC.TEMP n = new IMC.TEMP(getFrame.FP);
             IMC.BINOP binop = new IMC.BINOP(
                     IMC.BINOP.Oper.ADD,
                     n,
@@ -225,7 +236,8 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
             nekaj = binop;
 
         }else{
-            Report.info(nameExpr, "nekaj je:" + (nekaj == null ? "null" : nekaj.toString()));
+            Report.info(nameExpr, "nekaj je:" + (nekaj == null ? "ni tipa ACCESS" : nekaj.toString()));
+            throw new Report.Error("");
         }
         if(t instanceof TYP.BoolType || t instanceof TYP.CharType){
             var n = new IMC.MEM1(nekaj);
@@ -238,6 +250,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
 
         return ImcGen.expr.put(nameExpr, m8);
     }
+
     public AST.Node getObject(String str, AST.RecType b){
         
         for(var n : b.comps){
@@ -252,9 +265,27 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         return null;
     }
 
+
+    //Bi pričakovau od magistrantov da znajo fucking slovenščino
+    long getOffset(AST.CompExpr compExpr, Object arg){
+        Neki d = new Neki();
+        TYP.RecType b = (TYP.RecType)SemAn.ofType.get(compExpr.recExpr).actualType();
+        //var x = Memory.accesses.get(compExpr);
+        for (AST.CompDefn x : b.compTypes.name){
+            
+        }
+        var t = compExpr.accept(new MemEvaluator(), d);
+        long size = b.accept(MemEvaluator.sizeEval, null);
+        Report.info(Long.toString(d.offset));
+        long oo = size;
+        return size;
+    }
+
+    //TODO: Fix offsets of struct components
     @Override
     public Object visit(AST.CompExpr compExpr, Object arg){
         var neki = (IMC.Expr)compExpr.recExpr.accept(this, arg);
+        Report.info(compExpr,neki.toString());
         if(neki instanceof IMC.MEM1 a){
             neki = a.addr;
         }else if( neki instanceof IMC.MEM8 a){
@@ -265,7 +296,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
             Report.warning(compExpr, "Something went wrong with the compExpr");
         }
         //var tmp = Memory.accesses.get(getObject(compExpr.name, compExpr));
-        IMC.BINOP binop = new IMC.BINOP(IMC.BINOP.Oper.ADD, neki, new IMC.CONST(0));
+        IMC.BINOP binop = new IMC.BINOP(IMC.BINOP.Oper.ADD, neki, new IMC.CONST(getOffset(compExpr, arg)));
         IMC.MEM8 m = new IMC.MEM8(binop);
         return ImcGen.expr.put(compExpr, m);
     }
@@ -471,21 +502,23 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
             neki = b.addr;
         }
         var index = (IMC.Expr)arrExpr.idx.accept(this, arg);
-        var l = ((TYP.ArrType)SemAn.ofType.get(arrExpr.arrExpr)).elemType;
+        //var l = ((TYP.ArrType)SemAn.ofType.get(arrExpr.arrExpr)).elemType;
         var length =  SemAn.ofType.get(arrExpr.arrExpr).accept(MemEvaluator.sizeEval, null);
-        if(l == null){
-            Report.warning(arrExpr, "Array size is null");
-            
+        
+        var tmp = (SemAn.ofType.get(arrExpr.arrExpr));
+        long n=1;
+        if(tmp instanceof TYP.ArrType a){
+            n = a.numElems;
         }
-        Report.info("index: " + l);
+        //Report.info("index: " + l);
         IMC.BINOP binop = new IMC.BINOP(
                 IMC.BINOP.Oper.ADD,
                 neki,
                 new IMC.BINOP(IMC.BINOP.Oper.MUL,
                         index,
-                        new IMC.CONST(8l))
+                        new IMC.CONST(length/n))
         );
-        Report.info(t.toString());
+        //Report.info(t.toString());
 
 
         return ImcGen.expr.put(arrExpr, new IMC.MEM8((binop)));
@@ -520,7 +553,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
                 }
                 Report.warning(pfxExpr,"IDK");
 
-                pfx = new IMC.CONST(Long.valueOf(0));
+                //pfx = new IMC.CONST(Long.valueOf(0));
         }
         ((NekiNovega)arg).lastExpr = pfx;
 
@@ -537,13 +570,14 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
     public IMC.Stmt visit(AST.ReturnStmt returnStmt, Object arg) {
         Vector<IMC.Stmt> vec = new Vector<IMC.Stmt>();
         var neki = (IMC.Expr)returnStmt.retExpr.accept(this, arg);
+        Report.info(returnStmt, neki.toString());
         NekiNovega nekiNovega = (NekiNovega)arg;
         MEM.Frame frame = Memory.frames.get(nekiNovega.funDefn);
         IMC.MOVE move = new IMC.MOVE(
                 (new IMC.TEMP(frame.RV)),
                 neki
         );
-        var b = new IMC.JUMP(neki);
+        var b = new IMC.JUMP(new IMC.NAME(((NekiNovega)arg).l2));
         vec.addLast(move);
         vec.addLast(b);
         return ImcGen.stmt.put(returnStmt, new IMC.STMTS(vec));

@@ -1,18 +1,46 @@
-var t : int
-fun a(par0: int) : int =
-    par0 = 0
+typ logicna = bool
+typ strTyp1 = < comp1: int, comp2: ^char >
+typ strTyp2 = < comp1: { comp1: bool, comp2: char }, comp2: strTyp1 >
 
-fun main() : int = 
+var extVar1: int
+var extVar2: logicna
+var extVar3: char
+var extVar4: ^int
+var extVar5: [10]int
+
+fun main() : int =
+    extVar1 = 20,
     let
-        var b : char
+        var intVar1: int
+        var intVar2: ^int
+        var intVar3: bool
+        var intVar4: [20]char
+        var intVar5: [5]strTyp2
+        var intVar6: strTyp1
     in
-        b = 'c',
-        b = '\\',
-        b = '\'',
-        b = '\0x61'
-    end,
-    externalFunction(t),
-    return t
-    
+        extVar1 = 1,
+        extVar1 = { extVar4^ : int },
+        intVar1 = extVar1,
 
-fun externalFunction(par1: int) : int
+        extVar3 = 'a',
+        extVar3 = '\\',
+        extVar3 = '\'',
+        extVar3 = '\0x61',
+        extVar3 = { 97*100/extVar1 : char },
+
+        intVar2 = null,
+
+        intVar1 = -1,
+        extVar2 = !extVar2,
+
+        extVar2 = (true | false) != (extVar1 > intVar1),
+        intVar3 = { extVar2 & true : bool },
+
+        intVar2 = ^extVar1,
+        extVar4 = intVar2,
+
+        extVar5[1] = intVar6.comp1,
+        extVar5[1] = { intVar6.comp2 : int },
+        extVar2 = { intVar5[2].comp1 : bool },
+        intVar5[2].comp2.comp2 = ^extVar3
+    end

@@ -48,11 +48,11 @@ fun expressions() : int =
 fun statements() : int =
     10,
 
-    #if extVar2 then extVar1 = 1 end,
-    #if !extVar2 then return extVar1 end,
-    #if { extVar2 & true : bool } then extVar1 = 1, return extVar1 end,
+    if extVar2 then extVar1 = 1 end,
+    if !extVar2 then return extVar1 end,
+    if { extVar2 & true : bool } then extVar1 = 1, return extVar1 end,
 
-    #if extVar1 == extVar5[0] then return extVar1 else return extVar4^ end,
+    if extVar1 == extVar5[0] then return extVar1 else return extVar4^ end,
     
     while extVar5[9] > extVar4^ do extVar5[9] = extVar5[9] - 1 end
 
@@ -78,15 +78,15 @@ fun functions2(par0: int) : int =
         var intVar1: int
         fun fun1() : int = return 1
         fun fun2(par1: int) : int =
-            par1 = extVar4^ 
-            #if par0 == par1 then return intVar1 end
+            par1 = extVar4^,
+            if par0 == par1 then return intVar1 end
         fun fun3(par2: char) : char =
             let
                 fun fun4(par3: char) : char =
                     par3 = par2,
                     par0 = fun2(42),
-                    par2 = par3 
-                    #if main() == 0 then return '\0x4B' else return '\\' end
+                    par2 = par3,
+                    if main() == 0 then return '\0x4B' else return '\\' end
             in
                 fun4('"')
             end

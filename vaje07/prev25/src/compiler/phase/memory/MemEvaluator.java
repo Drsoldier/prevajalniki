@@ -189,7 +189,6 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
             arg.offset = b.offset;
         }
         arg.size += l;
-        //Report.info(parDefn, "Visiting parDefn: " + parDefn.name + ", " + arg.toString() + ", size: " + l);
         var t = new MEM.RelAccess(l, arg.offset, arg.depth);
         return Memory.accesses.put(parDefn, t);
     }
@@ -206,10 +205,9 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
 	@Override
 	public TYP.Type visit(AST.UniType uniType, Neki arg) {
         var o = arg.offset;
-        arg.offset=0;
         for(AST.CompDefn n : uniType.comps){
-            n.accept(this, arg);
             arg.offset=0;
+            n.accept(this, arg);
         }
         arg.offset = o;
         return null;
@@ -273,7 +271,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
         MEM.RelAccess access = new MEM.RelAccess(size, arg.offset, -1);
         arg.offset = arg.offset + oo;
 
-        
+        Report.info(compDefn, access.toString() + " " + compDefn.name);
         return Memory.accesses.put(compDefn, access);
     }
     
