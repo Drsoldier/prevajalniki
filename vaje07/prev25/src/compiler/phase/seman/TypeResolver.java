@@ -117,9 +117,11 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
         } else if (arg == Mode.RESOLVE){
 			LinkedList<TYP.Type> typelist = new LinkedList<TYP.Type>();
 			LinkedList<String> names = new LinkedList<String>();
+			LinkedList<AST.Node> comps = new LinkedList<AST.Node>();
             for (Node comp : strType.comps) {
                 TYP.Type b = comp.accept(this, arg);
 				AST.CompDefn compDefn = (AST.CompDefn)comp;
+				comps.addLast(compDefn);
 				if(b instanceof TYP.VoidType){
 					throw new Report.Error(strType, "Components cannot be void");
 				}
@@ -128,6 +130,7 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
             }
 			var typ = new TYP.StrType(typelist);
 			typ.names = names;
+			typ.componentNodes = comps;
 			return SemAn.isType.put(strType, typ);
         }
         return null;
@@ -141,6 +144,7 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
         } else if (arg == Mode.RESOLVE){
 			LinkedList<TYP.Type> typelist = new LinkedList<TYP.Type>();
 			LinkedList<String> names = new LinkedList<String>();
+			LinkedList<AST.Node> componentsNodes = new LinkedList<AST.Node>();
 
             for (Node comp : uniType.comps) {
                 TYP.Type b = comp.accept(this, arg);
@@ -148,11 +152,13 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 				if(b instanceof TYP.VoidType){
 					throw new Report.Error(uniType, "Components cannot be void");
 				}
+				componentsNodes.addLast(compDefn);
 				names.addLast(compDefn.name);
                 typelist.addLast(b);
             }
 			var typ = new TYP.UniType(typelist);
 			typ.names = names;
+			typ.componentNodes = componentsNodes;
 			return SemAn.isType.put(uniType, typ);
         }
 		return null;

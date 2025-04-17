@@ -271,14 +271,22 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         Neki d = new Neki();
         TYP.RecType b = (TYP.RecType)SemAn.ofType.get(compExpr.recExpr).actualType();
         //var x = Memory.accesses.get(compExpr);
-        for (AST.CompDefn x : b.compTypes.name){
+        /*for (AST.CompDefn x : b.compTypes.name){
             
+        }*/
+        int i = 0;
+        for(; i<b.names.size(); i++){
+            if(b.names.get(i).equals(compExpr.name)){
+                break;
+            }
         }
-        var t = compExpr.accept(new MemEvaluator(), d);
-        long size = b.accept(MemEvaluator.sizeEval, null);
-        Report.info(Long.toString(d.offset));
-        long oo = size;
-        return size;
+        if(i>=b.names.size()){
+            throw new Report.Error(compExpr,"Could not get node of component");
+        }
+        var nodeOfComponent = (AST.CompDefn)b.componentNodes.get(i);
+        long FUCK = ((MEM.RelAccess)Memory.accesses.get(nodeOfComponent)).offset;
+        
+        return FUCK;
     }
 
     //TODO: Fix offsets of struct components

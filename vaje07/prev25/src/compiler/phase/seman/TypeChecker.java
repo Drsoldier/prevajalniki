@@ -185,7 +185,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 			AST.CompDefn compDefn = (AST.CompDefn)comp;
 			TYP.Type c = SemAn.ofType.get(compDefn);
 			typelist.addLast(c);	
-
+			
 		}
 		return trenList;
 	}
