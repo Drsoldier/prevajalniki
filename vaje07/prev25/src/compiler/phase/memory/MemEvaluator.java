@@ -197,7 +197,11 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
     @Override
 	public TYP.Type visit(AST.StrType strType, Neki arg) {
         var o = arg.offset;
-        strType.comps.accept(this, null);
+        try{
+            strType.comps.accept(this, null);
+        }catch(StackOverflowError e){
+            throw new Report.Error(strType, "Expirienced stack overflow due to recursive struct");
+        }
         arg.offset = o;
 		return null;
 	}

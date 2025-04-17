@@ -166,15 +166,20 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 	public TYP.Type visit(AST.StrType strType, Mode arg) {
 		TYP.Type trenList = SemAn.isType.get(strType);
 		LinkedList<TYP.Type> typelist = new LinkedList<TYP.Type>();
-		for (Node comp : strType.comps) {
-			TYP.Type b = comp.accept(this, arg);
-			if(b instanceof TYP.VoidType){
-				throw new Report.Error(strType, "Components cannot be void");
-			}
+		try{
 
-			typelist.addLast(b);
+			for (Node comp : strType.comps) {
+				TYP.Type b = comp.accept(this, arg);
+				if(b instanceof TYP.VoidType){
+					throw new Report.Error(strType, "Components cannot be void");
+				}
+				
+				typelist.addLast(b);
+			}
+		}catch (StackOverflowError e){
+			throw new Report.Error(strType,"Expirienced stack overflow due to recursive struct");
 		}
-		
+			
 		return trenList;
 	}
 	@Override
