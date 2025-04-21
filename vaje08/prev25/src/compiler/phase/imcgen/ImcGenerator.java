@@ -82,13 +82,8 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         NekiNovega nekiNovega = new NekiNovega(defFunDefn);
         nekiNovega.l1 = l1;
         nekiNovega.l2 = l2;
-        /*for(var n : defFunDefn.stmts){
-            IMC.Stmt d = (IMC.Stmt)n.accept(this, arg);
-            Report.info(d.toString());
-            //ImcGen.stmt.put(defFunDefn, d);
-        }*/
+        
         defFunDefn.stmts.accept(this, nekiNovega);
-        //var l = new IMC.NAME(defFunDefn.label);
         return null;
     }
 
