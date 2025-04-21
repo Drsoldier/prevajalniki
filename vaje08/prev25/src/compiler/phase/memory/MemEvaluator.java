@@ -114,7 +114,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
         MEM.Frame access = new MEM.Frame(
             label, //Label
             arg.depth-1, //Depth of the function
-            sizeOfBeforePars-arg.offset, //Size of local variables
+            sizeOfBeforePars-arg.offset, //Size of local variables + static link on top
             arg.size, //Size of arguments
             sizeOfFunction //Size of the function
         );
@@ -245,7 +245,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
         }
         typDefn.type.accept(this,arg);
         if(arg.depth >= 0){
-            var size = type.accept(sizeEval, null);
+            long size = type.accept(sizeEval, null);
             var access = new MEM.RelAccess(-1, arg.offset+size*prefix, arg.depth);
             //Memory.accesses.put(typDefn, access);
             return null;
