@@ -2,7 +2,6 @@ package compiler.phase.imclin;
 
 import compiler.common.report.*;
 import compiler.phase.memory.*;
-import compiler.phase.seman.SemAn;
 import compiler.phase.abstr.*;
 import compiler.phase.abstr.AST.Nodes;
 import compiler.phase.imclin.LIN.*;
@@ -31,9 +30,11 @@ public class ChunkGenerator implements AST.FullVisitor<Object, ChunkContext> {
     public Object visit(AST.DefFunDefn defFunDefn, ChunkContext cc){
         //entry
         MEM.Frame frameOfFunction = Memory.frames.get(defFunDefn);
-
-
+        MEM.Label oldEnt = ImcGen.entryLabel.get(defFunDefn);
+        MEM.Label oldExit = ImcGen.exitLabel.get(defFunDefn);
         //CODE CHUNK
+        cc.funEntry = ImcGen.entryLabel.get(defFunDefn);
+        cc.funExit = ImcGen.exitLabel.get(defFunDefn);
         Vector<IMC.Stmt> statementsToBeAdded = new Vector<IMC.Stmt>();
         var newContext = new ChunkContext();
         ChunkContext neki;
@@ -47,7 +48,7 @@ public class ChunkGenerator implements AST.FullVisitor<Object, ChunkContext> {
         }else{
             defFunDefn.stmts.accept(this, newContext);
             neki = newContext;
-            LIN.CodeChunk cd = new CodeChunk(frameOfFunction, neki.statementsToBeAdded, new MEM.Label(), new MEM.Label());
+            LIN.CodeChunk cd = new CodeChunk(frameOfFunction, neki.statementsToBeAdded, oldEnt, oldExit);
             ImcLin.addCodeChunk(cd);
         }
 
@@ -58,9 +59,11 @@ public class ChunkGenerator implements AST.FullVisitor<Object, ChunkContext> {
     public Object visit(AST.ReturnStmt returnStmt, ChunkContext cc){
 
         IMC.STMTS neki = (IMC.STMTS) ImcGen.stmt.get(returnStmt);
+        returnStmt.retExpr.accept(this, cc);
         //cc.add(neki.stmts);
-        cc.addAll(neki.stmts);
-        return ImcGen.stmt.get(returnStmt);
+        cc.add(neki.stmts.get(0));
+        cc.add(neki.stmts.get(1));
+        return null;
     }
 
 
@@ -68,9 +71,6 @@ public class ChunkGenerator implements AST.FullVisitor<Object, ChunkContext> {
 
     @Override
     public Object visit(AST.AtomExpr atomExpr, ChunkContext cc){
-        
-        
-
 
         TYP.Type neki3 = SemAn.ofType.get(atomExpr);
         if(neki3 instanceof TYP.PtrType b){
@@ -117,8 +117,15 @@ public class ChunkGenerator implements AST.FullVisitor<Object, ChunkContext> {
                 IMC.MOVE t = new IMC.MOVE(newLbl, new IMC.CALL(t2.addr, t2.offs,x));
                 cc.add(t);
                 y.add(newLbl);
-            }else{
+            }else if(tmp instanceof IMC.CONST){
                 y.add(tmp);
+            }else if(tmp instanceof IMC.TEMP){
+                y.add(tmp);
+            }else{
+                IMC.Expr newLbl = new IMC.TEMP(new MEM.Temp());
+                IMC.MOVE t = new IMC.MOVE(newLbl, tmp);
+                cc.add(t);
+                y.add(newLbl);
             }
             
             
@@ -139,13 +146,34 @@ public class ChunkGenerator implements AST.FullVisitor<Object, ChunkContext> {
                 IMC.MOVE t = new IMC.MOVE(newLbl, new IMC.CALL(t2.addr, t2.offs,x));
                 cc.add(t);
                 y.add(newLbl);
-            }else{
+            }else if(tmp instanceof IMC.CONST){
                 y.add(tmp);
-            }
+            }else if(tmp instanceof IMC.TEMP){
+                y.add(tmp);
+            }else{
+                IMC.Expr newLbl = new IMC.TEMP(new MEM.Temp());
+                IMC.MOVE t = new IMC.MOVE(newLbl, tmp);
+                cc.add(t);
+                y.add(newLbl);
+            }/*9else{
+                y.add(tmp);
+            }*/
             
         }
         return y;
     }
+
+
+    //TODO FIX
+    @Override
+    public Object visit(AST.CallExpr callExpr, ChunkContext cc){
+        /*Vector<IMC.Expr> x = checkAndFixArguemntCall(callExpr.argExprs, cc);
+        IMC.CALL z = (IMC.CALL)ImcGen.expr.get(callExpr);
+        IMC.MOVE zzz = new IMC.MOVE(u.dst, new IMC.CALL(z.addr,z.offs, x));
+        cc.add(zzz);*/
+        return null;
+    }
+
     @Override
     public Object visit(AST.AssignStmt assignStmt, ChunkContext cc){
         //desno stran pustimo na mru
@@ -202,22 +230,104 @@ public class ChunkGenerator implements AST.FullVisitor<Object, ChunkContext> {
     }
 
 
-    //@Override
-    /*public Object visit(AST.Stmt stmt, ChunkContext cc){
+    public void fixIfThenStmt(){
+        
 
+    }
+
+
+
+    @Override
+    public Object visit(AST.IfThenStmt ifThenStmt, ChunkContext cc){
+        IMC.STMTS a = (IMC.STMTS)ImcGen.stmt.get(ifThenStmt);
+        if(a instanceof IMC.STMTS){
+
+        }
+        IMC.CJUMP x = (IMC.CJUMP)a.stmts.get(0);
+        
+
+        //ifThenStmt.thenStmt.accept(this, cc);
+        IMC.NAME falseName = new IMC.NAME(new MEM.Label());
+        IMC.LABEL g = new IMC.LABEL(falseName.label);
+        IMC.JUMP jFalse = new IMC.JUMP(x.negAddr);
+        IMC.CJUMP f = new IMC.CJUMP(x.cond, x.posAddr, falseName);
+        a.stmts.remove(0);
+        a.stmts.add(0, f);
+        a.stmts.add(1,g);
+        a.stmts.add(2, jFalse);
+        cc.addAll(removeStmts(a));        
         return null;
-    }*/
+    }
 
+
+    @Override
+    public Object visit(AST.WhileStmt whileStmt, ChunkContext cc){
+        IMC.STMTS a = (IMC.STMTS)ImcGen.stmt.get(whileStmt);
+        
+        IMC.CJUMP x = (IMC.CJUMP)a.stmts.get(1);
+        
+
+        whileStmt.stmts.accept(this, cc);
+        IMC.NAME falseName = new IMC.NAME(new MEM.Label());
+        IMC.LABEL falseLabel = new IMC.LABEL(falseName.label);
+
+        IMC.JUMP jFalse = new IMC.JUMP(x.negAddr);
+        IMC.CJUMP f = new IMC.CJUMP(x.cond, x.posAddr, falseName);
+        a.stmts.remove(1);
+        a.stmts.add(1, f);
+        a.stmts.add(2,falseLabel);
+        a.stmts.add(3, jFalse);
+        cc.addAll(removeStmts(a));
+        return null;
+    }
+
+    @Override
+    public Object visit(AST.IfThenElseStmt ifThenElseStmt, ChunkContext cc){
+        IMC.STMTS a = (IMC.STMTS)ImcGen.stmt.get(ifThenElseStmt);
+        
+        IMC.CJUMP x = (IMC.CJUMP)a.stmts.get(0);
+        
+
+        ifThenElseStmt.thenStmt.accept(this, cc);
+        ifThenElseStmt.elseStmt.accept(this, cc);
+        IMC.NAME falseName = new IMC.NAME(new MEM.Label());
+        IMC.LABEL g = new IMC.LABEL(falseName.label);
+        IMC.JUMP jFalse = new IMC.JUMP(x.negAddr);
+        IMC.CJUMP f = new IMC.CJUMP(x.cond, x.posAddr, falseName);
+        a.stmts.remove(0);
+        a.stmts.add(0, f);
+        a.stmts.add(1,g);
+        a.stmts.add(2, jFalse);
+
+        cc.addAll(removeStmts(a));
+        
+        return null;
+    }
     
 
+
+    public Vector<IMC.Stmt> removeStmts(IMC.STMTS stmt){
+        Vector<IMC.Stmt> x = new Vector<IMC.Stmt>();
+
+        for(var z : stmt.stmts){
+            if(z instanceof IMC.STMTS z2){
+                x.addAll(removeStmts(z2));
+            }else{
+                x.add(z);
+            }
+        }
+        return x;
+    }
 
     @Override
     public Object visit(AST.ExprStmt exprStmt, ChunkContext cc){
         //Dobimo dejanski stmt
         IMC.ESTMT imcGenStatementExpressiona = (IMC.ESTMT)ImcGen.stmt.get(exprStmt);
-
-        if(imcGenStatementExpressiona.expr instanceof IMC.CALL){
-            Report.info(exprStmt,"hallo");
+        if(imcGenStatementExpressiona.expr instanceof IMC.CALL t2){
+            AST.CallExpr tmp = (AST.CallExpr)exprStmt.expr;
+            Vector<IMC.Expr> ar = checkAndFixArguemntCall(tmp.argExprs, cc);
+            imcGenStatementExpressiona = new IMC.ESTMT((new IMC.CALL(t2.addr, t2.offs, ar)));
+           //imcGenStatementExpressiona.expr = checkAndFixArguemntCallRec(exprStmt.expr, cc); 
         }
         cc.add(imcGenStatementExpressiona);
         return null;

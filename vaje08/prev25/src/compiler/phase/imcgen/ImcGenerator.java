@@ -471,29 +471,31 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         Vector<IMC.Stmt> vec = new Vector<IMC.Stmt>();
         IMC.Expr vec5 = null;
         IMC.Expr vec7 = null;
-        var l1 = new MEM.Label();
-        IMC.LABEL ooo = new IMC.LABEL(l1);
-        vec5 = new IMC.NAME(l1);
-        var neki = (IMC.Expr)whileStmt.condExpr.accept(this, arg);
+        var before = new MEM.Label();
+        IMC.LABEL beforeCheckLabel = new IMC.LABEL(before);
+        IMC.LABEL afterCheckLabel = new IMC.LABEL(new MEM.Label());
+        vec5 = new IMC.NAME(before);
+        var condExpr = (IMC.Expr)whileStmt.condExpr.accept(this, arg);
         //vec.addLast((IMC.Stmt)ooo);
         for (var n : whileStmt.stmts){
             IMC.Stmt t =(IMC.Stmt) n.accept(this, arg);
             vec.addLast(t);
             vec2.addLast(((NekiNovega)arg).lastExpr);
         }
-        var l3 = new MEM.Label();
-        IMC.LABEL l4 = new IMC.LABEL(l3);
+        var trueL = new MEM.Label();
+        IMC.LABEL trueLabel = new IMC.LABEL(trueL);
         //vec.addLast(l4);
-        vec7 = new IMC.NAME(l3);
+        vec7 = new IMC.NAME(trueL);
         Vector<IMC.Stmt> vec3 = new Vector<IMC.Stmt>();
-        var b = new IMC.CJUMP(neki, vec5, vec7);
-        var l = new IMC.STMTS(vec);
-        vec3.addLast(ooo);
-        vec3.addLast(b);
-        vec3.addLast(l4);
-        vec3.addLast(l);
-        vec3.addLast(new IMC.JUMP(vec5));
-        vec3.addLast(new IMC.LABEL(new MEM.Label()));
+        IMC.LABEL exitLabel = new IMC.LABEL(new MEM.Label());
+        var checkJump = new IMC.CJUMP(condExpr, vec7, new IMC.NAME(exitLabel.label));
+        var statements = new IMC.STMTS(vec);
+        vec3.addLast(beforeCheckLabel);
+        vec3.addLast(checkJump);
+        vec3.addLast(trueLabel);
+        vec3.addLast(statements);
+        vec3.addLast(new IMC.JUMP(new IMC.NAME(beforeCheckLabel.label)));
+        vec3.addLast(exitLabel);
         return ImcGen.stmt.put(whileStmt, new IMC.STMTS(vec3));
     }
 
@@ -585,7 +587,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
                 (new IMC.TEMP(frame.RV)),
                 neki
         );
-        var b = new IMC.JUMP(new IMC.NAME(((NekiNovega)arg).l2));
+        IMC.JUMP b = new IMC.JUMP(new IMC.NAME(((NekiNovega)arg).l2));
         vec.addLast(move);
         vec.addLast(b);
         return ImcGen.stmt.put(returnStmt, new IMC.STMTS(vec));

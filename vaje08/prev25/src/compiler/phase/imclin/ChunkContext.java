@@ -4,10 +4,12 @@ import java.util.Vector;
 
 import compiler.phase.abstr.*;
 import compiler.phase.imcgen.*;
+import compiler.phase.memory.MEM;
 
 public class ChunkContext {
     public Vector<IMC.Stmt> statementsToBeAdded = new Vector<IMC.Stmt>();
-
+    public MEM.Label funExit;
+    public MEM.Label funEntry;
     public ChunkContext(){
 
     }
