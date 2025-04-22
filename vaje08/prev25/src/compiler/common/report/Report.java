@@ -126,6 +126,11 @@ public class Report {
 			if (compiler.Compiler.devMode())
 				this.printStackTrace();
 		}
+		public InternalError(String str){
+			super(str);
+			if (true)
+				this.printStackTrace();
+		}
 
 	}
 

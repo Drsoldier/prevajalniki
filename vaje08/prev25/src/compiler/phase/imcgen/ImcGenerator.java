@@ -74,6 +74,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
     @Override
     public Object visit(AST.DefFunDefn defFunDefn, Object arg) {
         MEM.Frame neki = Memory.frames.get(defFunDefn);
+        IMC.TEMP n = new IMC.TEMP(neki.FP);
         //NekiNovega frame = (NekiNovega)arg;
         var l1 = new MEM.Label();
         var l2 = new MEM.Label();
@@ -82,7 +83,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         NekiNovega nekiNovega = new NekiNovega(defFunDefn);
         nekiNovega.l1 = l1;
         nekiNovega.l2 = l2;
-        
+        nekiNovega.staticLink = n;
         defFunDefn.stmts.accept(this, nekiNovega);
         return null;
     }
@@ -284,7 +285,6 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         return FUCK;
     }
 
-    //TODO: Fix offsets of struct components
     @Override
     public Object visit(AST.CompExpr compExpr, Object arg){
         var neki = (IMC.Expr)compExpr.recExpr.accept(this, arg);
@@ -448,11 +448,14 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         return t.accept(MemEvaluator.sizeEval, null);
         
     }
+
     @Override
     public Object visit(AST.CallExpr callExpr, Object arg) {
         Vector<IMC.Expr> vec = new Vector<IMC.Expr>();
         Vector<Long> vec1 = new Vector<Long>();
         var acceptedExpr = (IMC.Expr)callExpr.funExpr.accept(this, arg);
+        NekiNovega x = (NekiNovega) arg;
+        vec.add(new IMC.MEM8(x.staticLink));
         for (var n : callExpr.argExprs){
             IMC.Expr t =(IMC.Expr) n.accept(this, arg);
             vec.addLast(t);

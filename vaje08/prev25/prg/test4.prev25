@@ -1,8 +1,2 @@
-var extVar1: int
 fun main() : int =
-  let
-    var intVar1: int
-  in
-    intVar1 = extVar1
-  end,
-  return 0
+  return 1 + 1

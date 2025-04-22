@@ -275,7 +275,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
         MEM.RelAccess access = new MEM.RelAccess(size, arg.offset, -1);
         arg.offset = arg.offset + oo;
 
-        Report.info(compDefn, access.toString() + " " + compDefn.name);
+        //Report.info(compDefn, access.toString() + " " + compDefn.name);
         return Memory.accesses.put(compDefn, access);
     }
     

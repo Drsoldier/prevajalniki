@@ -223,11 +223,19 @@ public class Compiler {
 				try (ImcLin imclin = new ImcLin()) {
 					Abstr.tree.accept(new ChunkGenerator(), null);
 					imclin.log();
+					//try{
 
-					// if (true) {
-					// Interpreter interpreter = new Interpreter(ImcLin.dataChunks(), ImcLin.codeChunks());
-					// System.out.println("EXIT CODE: " + interpreter.run("_main"));
-					// }
+						if (true) {
+							Interpreter interpreter = new Interpreter(ImcLin.dataChunks(), ImcLin.codeChunks());
+							//try{
+								//System.out.println("EXIT CODE: " + interpreter.run("_main"));
+
+							/* }catch(Report.InternalError e){
+								System.out.println(e);
+							}catch(Exception e){
+								System.out.println(e);
+							}*/
+						}
 				}
 				if (cmdLineOptValues.get("--target-phase").equals("imclin"))
 					break;

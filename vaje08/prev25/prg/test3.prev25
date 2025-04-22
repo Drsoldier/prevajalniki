@@ -6,9 +6,10 @@ fun main() : int =
         x = 1,
         x = x + 1,
         c = "aa",
-        abc(k(1), k(2), k(3)),
-        x = k(k(k(1))),
-        return 0
+        x = k(1),
+        #abc(1, 2, 3),
+        #x = k(k(k(1))),
+        return x
     end
 
 fun k(o : int): int =
@@ -21,4 +22,14 @@ fun abc(t : int, p : int, o : int) : int =
 fun infVoid() : int =
     while 1 == 1 do
         1 + 1
+    end
+
+fun kkk() : int =
+    let
+        var x : int
+        var y : int
+    in
+        x = 1,
+        y = 1,
+        return x + 1
     end
