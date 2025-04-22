@@ -112,7 +112,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 					temp = TYP.PtrType.type;
 					break;
 				case STR:
-					temp = TYP.PtrType.type;
+					temp = new TYP.PtrType(TYP.CharType.type);
+					
 					break;
 				default:
 					temp = null;

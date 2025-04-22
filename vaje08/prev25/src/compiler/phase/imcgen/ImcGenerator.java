@@ -56,7 +56,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
             n.accept(this, arg);
         }
         for (var n : letStmt.stmts){
-            IMC.Stmt t =(IMC.Stmt) n.accept(this, arg);
+            IMC.Stmt t = (IMC.Stmt) n.accept(this, arg);
             vec.addLast(t);
         }
         
@@ -231,7 +231,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
             nekaj = binop;
 
         }else{
-            Report.info(nameExpr, "nekaj je:" + (nekaj == null ? "ni tipa ACCESS" : nekaj.toString()));
+            //Report.info(nameExpr, "nekaj je:" + (nekaj == null ? "ni tipa ACCESS" : nekaj.toString()));
             throw new Report.Error("");
         }
         if(t instanceof TYP.BoolType || t instanceof TYP.CharType){
@@ -288,13 +288,13 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
     @Override
     public Object visit(AST.CompExpr compExpr, Object arg){
         var neki = (IMC.Expr)compExpr.recExpr.accept(this, arg);
-        Report.info(compExpr,neki.toString());
+        //Report.info(compExpr,neki.toString());
         if(neki instanceof IMC.MEM1 a){
             neki = a.addr;
         }else if( neki instanceof IMC.MEM8 a){
             neki = a.addr;
         }else{
-            Report.warning(neki.toString());
+            //Report.warning(neki.toString());
             //throw new Report.Error(compExpr, "Something went wrong with the compExpr");
             Report.warning(compExpr, "Something went wrong with the compExpr");
         }
@@ -308,7 +308,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
     public Object visit(AST.SfxExpr sfxExpr, Object arg) {
         var neki = (IMC.Expr)sfxExpr.subExpr.accept(this, arg);
         if(neki == null){
-            Report.warning(sfxExpr, "SfxExpr: " + sfxExpr.toString());
+            //Report.warning(sfxExpr, "SfxExpr: " + sfxExpr.toString());
             neki = new IMC.CONST(Long.valueOf(0));
         }
         IMC.Expr sfx = null;
@@ -430,6 +430,11 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
             case PTR : 
                 l = new IMC.CONST(0);
                 break;
+
+            case STR:
+                MEM.AbsAccess tmp = Memory.strings.get(atomExpr);
+                return ImcGen.expr.put(atomExpr, new IMC.NAME(tmp.label));    
+
             default:
                 throw new Report.Error("How did we get here?");
         }
@@ -533,7 +538,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         NekiNovega nekiNovega = (NekiNovega)arg;
         var neki = (IMC.Expr)pfxExpr.subExpr.accept(this, arg);
         if(neki == null){
-            Report.warning(pfxExpr, "PfxExpr: " + pfxExpr.toString());
+            //Report.warning(pfxExpr, "PfxExpr: " + pfxExpr.toString());
             neki = new IMC.CONST(Long.valueOf(0));
         }
         IMC.Expr pfx = null;
@@ -554,7 +559,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
                 }else if(neki instanceof IMC.MEM1 b){
                     pfx = b.addr;
                 }
-                Report.warning(pfxExpr,"IDK");
+                //Report.warning(pfxExpr,"IDK");
 
                 //pfx = new IMC.CONST(Long.valueOf(0));
         }
@@ -573,7 +578,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
     public IMC.Stmt visit(AST.ReturnStmt returnStmt, Object arg) {
         Vector<IMC.Stmt> vec = new Vector<IMC.Stmt>();
         var neki = (IMC.Expr)returnStmt.retExpr.accept(this, arg);
-        Report.info(returnStmt, neki.toString());
+        //Report.info(returnStmt, neki.toString());
         NekiNovega nekiNovega = (NekiNovega)arg;
         MEM.Frame frame = Memory.frames.get(nekiNovega.funDefn);
         IMC.MOVE move = new IMC.MOVE(

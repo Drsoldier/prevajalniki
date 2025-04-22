@@ -289,12 +289,9 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
             var idkAnymore = new MEM.AbsAccess(size-1, lbl, str);
             //var idkAnymore = new MEM.RelAccess(1l, 1l, 1l);
             //Report.info(idkAnymore.label.name +  " " + str);
-            var node = atomExpr;
             //AST.Type node = atomExpr.type.accept(this, null);
-            if(atomExpr instanceof AST.Node){   
-                //Report.info("FUCK");
-            }
-            Memory.strings.put(node, idkAnymore);
+            
+            Memory.strings.put(atomExpr, idkAnymore);
             break;    
         default:
             break;

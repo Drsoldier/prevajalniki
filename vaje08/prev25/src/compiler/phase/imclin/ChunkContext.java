@@ -14,6 +14,9 @@ public class ChunkContext {
     public void add(IMC.Stmt n){
         statementsToBeAdded.addLast(n);
     }
+    public void addFirst(IMC.Stmt n){
+        statementsToBeAdded.add(0,n);
+    }
     public void addAll(Vector<IMC.Stmt> n){
         statementsToBeAdded.addAll(n);
     }
@@ -21,4 +24,6 @@ public class ChunkContext {
     public Vector<IMC.Stmt> getVec(){
         return statementsToBeAdded;
     }
+
+    
 }

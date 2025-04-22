@@ -7,6 +7,7 @@ var extVar2: logicna
 var extVar3: char
 var extVar4: ^int
 var extVar5: [10]int
+var tmp : ^char
 
 fun expressions() : int =
     extVar1 = 20,
@@ -21,7 +22,7 @@ fun expressions() : int =
         extVar1 = 1,
         extVar1 = { extVar4^ : int },
         intVar1 = extVar1,
-
+        tmp = "aaaa",
         extVar3 = 'a',
         extVar3 = '\\',
         extVar3 = '\'',
@@ -42,7 +43,8 @@ fun expressions() : int =
         extVar5[1] = intVar6.comp1,
         extVar5[1] = { intVar6.comp2 : int },
         extVar2 = { intVar5[2].comp1 : bool },
-        intVar5[2].comp2.comp2 = ^extVar3
+        intVar5[2].comp2.comp2 = ^extVar3,  
+        return extVar1
     end
 
 fun statements() : int =

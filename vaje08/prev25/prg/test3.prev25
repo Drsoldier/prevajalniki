@@ -1,2 +1,19 @@
 fun main() : int = 
-    return 0
+    let 
+        var x : int
+        var c : ^char
+    in
+        x = 1,
+        x = x + 1,
+        c = "aa",
+        abc(x+1,x+2,x+3),
+        x = k(k(k(1))),
+        return 0
+    end
+
+fun k(o : int): int =
+    return o + 1
+
+
+fun abc(t : int, p : int, o : int) : int =
+    return t + p + o
