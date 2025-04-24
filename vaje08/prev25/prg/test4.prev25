@@ -1,2 +1,5 @@
 fun main() : int =
-  return 1 + 1
+  return x()
+
+fun x() : int = 
+  return 2

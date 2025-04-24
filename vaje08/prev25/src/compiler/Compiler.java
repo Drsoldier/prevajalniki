@@ -227,12 +227,12 @@ public class Compiler {
 
 						if (true) {
 							Interpreter interpreter = new Interpreter(ImcLin.dataChunks(), ImcLin.codeChunks());
-							//try{
-								//System.out.println("EXIT CODE: " + interpreter.run("_main"));
+							try{
+							System.out.println("EXIT CODE: " + interpreter.run("_main"));
 
-							/* }catch(Report.InternalError e){
-								System.out.println(e);
-							}catch(Exception e){
+							 }catch(Report.InternalError e){
+								System.out.println(e);}
+							/*}catch(Exception e){
 								System.out.println(e);
 							}*/
 						}

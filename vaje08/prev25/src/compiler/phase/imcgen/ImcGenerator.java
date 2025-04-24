@@ -456,6 +456,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         var acceptedExpr = (IMC.Expr)callExpr.funExpr.accept(this, arg);
         NekiNovega x = (NekiNovega) arg;
         vec.add(new IMC.MEM8(x.staticLink));
+        vec1.add(8L);
         for (var n : callExpr.argExprs){
             IMC.Expr t =(IMC.Expr) n.accept(this, arg);
             vec.addLast(t);
@@ -463,7 +464,8 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         }
         var neki2 = new IMC.CALL(acceptedExpr, vec1, vec);
         ((NekiNovega)arg).lastExpr = neki2;
-
+        Report.info(vec.toString() + "<- info");
+        Report.info(neki2.toString());
         return ImcGen.expr.put(callExpr, neki2);
     }
 
