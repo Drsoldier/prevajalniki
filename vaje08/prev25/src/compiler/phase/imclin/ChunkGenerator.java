@@ -29,6 +29,18 @@ public class ChunkGenerator implements AST.FullVisitor<Object, ChunkContext> {
 
 
     @Override
+    public Object visit(AST.SfxExpr sfxExpr, ChunkContext cc){
+
+        return null;
+    }
+
+    @Override
+    public Object visit(AST.PfxExpr pfxExpr, ChunkContext cc){
+
+        return null;
+    }
+
+    @Override
     public Object visit(AST.BinExpr binExpr, ChunkContext cc){
 
         //preglej prvo 
