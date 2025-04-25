@@ -40,10 +40,53 @@ public class ChunkGenerator implements AST.FullVisitor<Object, ChunkContext> {
         return null;
     }
 
+
+    public boolean isCallExpr(AST.Node b){
+        if(b instanceof AST.CallExpr){
+            return true;
+        }
+        if(b instanceof AST.BinExpr c){
+            return isCallExpr(c.fstExpr) || isCallExpr(c.sndExpr);
+        }
+        if(b instanceof AST.CastExpr c){
+            return isCallExpr(c.expr);
+        }
+        if(b instanceof AST.SfxExpr c){
+            return isCallExpr(c.subExpr);
+        }
+        if(b instanceof AST.PfxExpr c){
+            return isCallExpr(c.subExpr);
+        }
+
+        return false;
+    }
+    
+    public boolean isCallExprOneLevel(AST.Node b){
+        if(b instanceof AST.CallExpr){
+            return true;
+        }
+
+        return false;
+    }
+
     @Override
     public Object visit(AST.BinExpr binExpr, ChunkContext cc){
 
+        IMC.Stmt fstExpr;
+        IMC.Stmt sndExpr;
+        IMC.BINOP binOp = (IMC.BINOP)ImcGen.expr.get(binExpr);
         //preglej prvo 
+        if(isCallExprOneLevel(binExpr.fstExpr)){
+
+            binExpr.fstExpr.accept(this, cc);
+            IMC.MOVE zzz = (IMC.MOVE)cc.getVec().getLast();
+
+        }else{
+            binExpr.fstExpr.accept(this, cc);
+            fstExpr = cc.getVec().get(0);
+        }
+        
+
 
         //preglej drugo
 
@@ -240,22 +283,15 @@ public class ChunkGenerator implements AST.FullVisitor<Object, ChunkContext> {
     //TODO FIX
     @Override
     public Object visit(AST.CallExpr callExpr, ChunkContext cc){
-        Report.info("AAAAAAAAAAAAA");
         //Report.info(cc.getVec().toString());
         Report.warning(callExpr.argExprs.toString());
-        for(var n : callExpr.argExprs){
-            Report.info(n.toString());
-        }
         IMC.TEMP lbl = new IMC.TEMP(new MEM.Temp());
         var x = checkAndFixArgumentCall(callExpr.argExprs, cc, 0);
         IMC.CALL imc = (IMC.CALL)ImcGen.expr.get(callExpr);
         x.add(0,imc.args.get(0));
-        Report.warning(imc.toString());
         IMC.MOVE newMove = new IMC.MOVE(lbl,new IMC.CALL(imc.addr,(imc).offs,x));
         cc.add(newMove);
-        //cc.add(ImcGen.expr.get(callExpr));
-        //Report.info(cc.getVec().toString());
-        Report.info("BBBBBBBBBBBB");
+
         return null;
     }
 
@@ -289,13 +325,6 @@ public class ChunkGenerator implements AST.FullVisitor<Object, ChunkContext> {
             cc.add(new IMC.MOVE(x,u.src));
             cc.add(new IMC.MOVE(u.dst, x));
         }
-        
-        
-        //cc.add(n);
-    
-        
-        //TODO
-
 
         return null;
     }
@@ -310,12 +339,6 @@ public class ChunkGenerator implements AST.FullVisitor<Object, ChunkContext> {
         //Report.info(letStmt, "The number of statements in this is: "+ newCc.getVec().size());
         cc.addAll(newCc.getVec());
         return null;
-    }
-
-
-    public void fixIfThenStmt(){
-        
-
     }
 
 
@@ -418,8 +441,7 @@ public class ChunkGenerator implements AST.FullVisitor<Object, ChunkContext> {
 
     public Object visit(Object o, Object o2){
 
-
-        return null;
+        throw new Report.Error("Not yet implemented for " + o.toString());
     }
 
 }
