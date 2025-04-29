@@ -1,0 +1,18 @@
+    @Override
+    public Object visit(AST.BinExpr binExpr, ChunkContext cc){
+
+        IMC.Expr fstExpr;
+        IMC.Expr sndExpr;
+        IMC.BINOP binOp = (IMC.BINOP)ImcGen.expr.get(binExpr);
+        binExpr.fstExpr.accept(this,cc);
+        var temp1 = new MEM.Temp();
+        cc.add(new IMC.MOVE(new IMC.TEMP(temp1), ImcGen.expr.get(binExpr.fstExpr)));
+        var temp2 = new MEM.Temp();
+        binExpr.sndExpr.accept(this, cc);
+        cc.add(new IMC.MOVE(new IMC.TEMP(temp2), ImcGen.expr.get(binExpr.sndExpr)));
+        var res = new MEM.Temp();
+        cc.add(new IMC.MOVE(new IMC.TEMP(res), new IMC.BINOP(binOp.oper, new IMC.TEMP(temp1), new IMC.TEMP(temp2))));
+        return null;
+    }
+
+    

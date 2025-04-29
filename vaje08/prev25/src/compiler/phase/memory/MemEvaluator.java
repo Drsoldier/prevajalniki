@@ -142,20 +142,23 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
         arg.isInFunctionParam = true;
         arg.offset = 0;
         extFunDefn.pars.accept(this, arg);
+        
+        MEM.Frame frameOfFunction = new MEM.Frame(
+            label,
+            arg.depth-1, 
+            arg.offset,
+            arg.size,
+            0
+        );
         arg.depth=oldDepth;
         arg.isInFunctionParam = false;
         arg.offset = curOffset;
         arg.size = oldSize;
+        //Memory.frames.put(extFunDefn, frameOfFunction);
         return label;
     }
 
-    /*@Override
-    public Object visit(LetStmt letStmt, Neki arg) {
-        Report.info(letStmt, "Visiting let statement at depth: " + arg.depth);
-        letStmt.defns.accept(this,arg);
-        letStmt.stmts.accept(this, arg);
-        return null;
-    }*/
+    
   
     @Override
     public Object visit(AST.ParDefn parDefn, Neki arg) {

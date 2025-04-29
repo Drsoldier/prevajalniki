@@ -1,8 +1,15 @@
 fun fib(n : int) : int =
-    if n < 0 then
+    let
+        var x : int
+        var y : int
+        var z : int
+    in
+    if n < 2 then
         return n
     end,
+    
     return fib(n-1) + fib(n-2)
+    end
 
 fun main() : int = 
-    return fib(3)
+    return fib(10)

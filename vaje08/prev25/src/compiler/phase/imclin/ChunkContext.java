@@ -10,6 +10,10 @@ public class ChunkContext {
     public Vector<IMC.Stmt> statementsToBeAdded = new Vector<IMC.Stmt>();
     public MEM.Label funExit;
     public MEM.Label funEntry;
+    public MEM.Temp rv;
+    public MEM.Temp sl;
+    public MEM.Frame currFrame;
+    public AST.Node enacps;
     public ChunkContext(){
 
     }

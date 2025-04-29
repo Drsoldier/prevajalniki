@@ -95,6 +95,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 
 	}
 
+
+
 	@Override
 	public TYP.Type visit(AST.AtomExpr atomExpr, Mode arg) {
 			TYP.Type temp;
@@ -198,13 +200,14 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Mode> {
 
 	@Override
 	public TYP.Type visit(AST.CompDefn compDefn, Mode arg) {
-		TYP.Type a = compDefn.type.accept(this, arg);
-		
+		TYP.Type a = SemAn.ofType.get(compDefn);
+
 		if(a==null)
 			return SemAn.ofType.put(compDefn, TYP.IntType.type);
 		
 		return SemAn.ofType.put(compDefn, a);
 	}
+
 	@Override
 	public TYP.Type visit(AST.BinExpr binExpr, Mode arg) {	
 		TYP.Type a = binExpr.fstExpr.accept(this, arg);

@@ -1,0 +1,5 @@
+fun putchar(c: char): void
+
+fun main(): int =
+    putchar('c'),
+    return 0

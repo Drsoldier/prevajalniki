@@ -3,6 +3,7 @@ package compiler.phase.imcgen;
 import compiler.phase.abstr.*;
 import compiler.phase.abstr.AST.CastExpr;
 import compiler.phase.abstr.AST.Nodes;
+import compiler.phase.abstr.AST.SizeExpr;
 import compiler.phase.memory.*;
 import compiler.phase.seman.*;
 import compiler.common.report.*;
@@ -68,6 +69,11 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
     public IMC.Stmt visit(AST.ExprStmt exprStmt, Object arg) {
         IMC.Expr o = (IMC.Expr)exprStmt.expr.accept(this, arg);
         var b = new IMC.ESTMT(o);
+        if(b.expr instanceof IMC.CALL d){
+            //Report.info(exprStmt,"aaaaaaaa" +d.toString());
+            //Report.info(b.toString());
+
+        }
         return ImcGen.stmt.put(exprStmt, b);
     }
 
@@ -194,7 +200,7 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
             return ImcGen.expr.put(nameExpr, neki);
         }else if(tmp instanceof AST.ExtFunDefn b){
             //var n = new IMC.NAME(Memory.frames.get(nameExpr).label);
-            var n = new IMC.NAME(new MEM.Label());
+            var n = new IMC.NAME(new MEM.Label(b.name));
             return ImcGen.expr.put(nameExpr, n);
         }
         TYP.Type t = SemAn.ofType.get(nameExpr);
@@ -304,6 +310,18 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         return ImcGen.expr.put(compExpr, m);
     }
 
+
+    //Dereference
+    /*@Override
+    public Object visit(AST.SfxExpr sfxExpr, Object arg) {
+        var neki = (IMC.Expr)sfxExpr.subExpr.accept(this, arg);
+        ((NekiNovega)arg).lastExpr = neki;
+        if(neki instanceof IMC.MEM1 m){
+            return ImcGen.expr.put(sfxExpr, m.addr);
+        }
+        IMC.MEM8 x = (IMC.MEM8)neki;
+        return ImcGen.expr.put(sfxExpr, x.addr);
+    }*/
     @Override
     public Object visit(AST.SfxExpr sfxExpr, Object arg) {
         var neki = (IMC.Expr)sfxExpr.subExpr.accept(this, arg);
@@ -323,6 +341,90 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         return ImcGen.expr.put(sfxExpr, sfx);
     }
 
+    //Reference
+    @Override
+    public Object visit(AST.PfxExpr pfxExpr, Object arg) {
+
+        NekiNovega nekiNovega = (NekiNovega)arg;
+        var neki = (IMC.Expr)pfxExpr.subExpr.accept(this, arg);
+        if(neki == null){
+            //Report.warning(pfxExpr, "PfxExpr: " + pfxExpr.toString());
+            neki = new IMC.CONST(Long.valueOf(0));
+        }
+        IMC.Expr pfx = null;
+        switch(pfxExpr.oper) {
+            case NOT:
+                pfx = new IMC.UNOP(IMC.UNOP.Oper.NOT, neki);
+
+                break;
+            case ADD:
+
+                break;
+            case SUB:
+                pfx = new IMC.UNOP(IMC.UNOP.Oper.NEG, neki);
+                break;
+            case PTR:
+                if(neki instanceof IMC.MEM8 b){
+                    pfx = b.addr;
+                }else if(neki instanceof IMC.MEM1 b){
+                    pfx = b.addr;
+                }
+                //Report.warning(pfxExpr,"IDK");
+
+                //pfx = new IMC.CONST(Long.valueOf(0));
+        }
+        ((NekiNovega)arg).lastExpr = pfx;
+
+        /*IMC.Expr neki = (IMC.Expr)pfxExpr.expr.accept(this, arg);
+        IMC.BINOP binop = new IMC.BINOP(
+                IMC.BINOP.Oper.NEG,
+                neki,
+                null
+        );*/
+        return ImcGen.expr.put(pfxExpr, pfx);
+    }
+    
+    /*@Override
+    public Object visit(AST.PfxExpr pfxExpr, Object arg) {
+
+        NekiNovega nekiNovega = (NekiNovega)arg;
+        var neki = (IMC.Expr)pfxExpr.subExpr.accept(this, arg);
+        if(neki == null){
+            //Report.warning(pfxExpr, "PfxExpr: " + pfxExpr.toString());
+            neki = new IMC.CONST(Long.valueOf(0));
+        }
+        TYP.Type t = SemAn.ofType.get(pfxExpr.subExpr);
+
+        IMC.Expr pfx = null;
+        switch(pfxExpr.oper) {
+            case NOT:
+                pfx = new IMC.UNOP(IMC.UNOP.Oper.NOT, neki);
+
+                break;
+            case ADD:
+                
+                break;
+            case SUB:
+                pfx = new IMC.UNOP(IMC.UNOP.Oper.NEG, neki);
+                break;
+            case PTR:
+                if(t instanceof TYP.BoolType || t instanceof TYP.CharType){
+                    pfx = new IMC.MEM1(neki);
+                }else {
+                    pfx = new IMC.MEM8(neki);
+                }
+        }
+        ((NekiNovega)arg).lastExpr = pfx;
+
+        /*IMC.Expr neki = (IMC.Expr)pfxExpr.expr.accept(this, arg);
+        IMC.BINOP binop = new IMC.BINOP(
+                IMC.BINOP.Oper.NEG,
+                neki,
+                null
+        );
+        return ImcGen.expr.put(pfxExpr, pfx);
+    }*/
+
     @Override
     public IMC.Expr visit(CastExpr castExpr, Object arg) {
         var castType = SemAn.ofType.get(castExpr);
@@ -338,8 +440,10 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
     }
 
     public Object visit(AST.BinExpr binExpr, Object arg) {
-        var left = (IMC.Expr)binExpr.fstExpr.accept(this, arg);
-        var right = (IMC.Expr)binExpr.sndExpr.accept(this, arg);
+        binExpr.fstExpr.accept(this, arg);
+        binExpr.sndExpr.accept(this, arg);
+        IMC.Expr left = ImcGen.expr.get(binExpr.fstExpr);
+        IMC.Expr right = ImcGen.expr.get(binExpr.sndExpr);
         IMC.BINOP binop = null;
         switch(binExpr.oper) {
             case ADD:
@@ -450,6 +554,13 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
     }
 
     @Override
+    public IMC.Expr visit(SizeExpr sizeExpr, Object arg) {
+        var fuuuuuuuuuuck = SemAn.ofType.get(sizeExpr).accept(MemEvaluator.sizeEval, null);
+        
+        return ImcGen.expr.put(sizeExpr, new IMC.CONST(fuuuuuuuuuuck));
+    }
+
+    @Override
     public Object visit(AST.CallExpr callExpr, Object arg) {
         Vector<IMC.Expr> vec = new Vector<IMC.Expr>();
         Vector<Long> vec1 = new Vector<Long>();
@@ -464,8 +575,8 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         }
         var neki2 = new IMC.CALL(acceptedExpr, vec1, vec);
         ((NekiNovega)arg).lastExpr = neki2;
-        Report.info(vec.toString() + "<- info");
-        Report.info(neki2.toString());
+        //Report.info(vec.toString() + "<- info");
+        //Report.info(neki2.toString());
         return ImcGen.expr.put(callExpr, neki2);
     }
 
@@ -539,46 +650,12 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         return ImcGen.expr.put(arrExpr, new IMC.MEM8((binop)));
     }
 
+
+
     @Override
-    public Object visit(AST.PfxExpr pfxExpr, Object arg) {
+    public Object visit(AST.ExtFunDefn extFunDefn, Object arg){
 
-        NekiNovega nekiNovega = (NekiNovega)arg;
-        var neki = (IMC.Expr)pfxExpr.subExpr.accept(this, arg);
-        if(neki == null){
-            //Report.warning(pfxExpr, "PfxExpr: " + pfxExpr.toString());
-            neki = new IMC.CONST(Long.valueOf(0));
-        }
-        IMC.Expr pfx = null;
-        switch(pfxExpr.oper) {
-            case NOT:
-                pfx = new IMC.UNOP(IMC.UNOP.Oper.NOT, neki);
-
-                break;
-            case ADD:
-
-                break;
-            case SUB:
-                pfx = new IMC.UNOP(IMC.UNOP.Oper.NEG, neki);
-                break;
-            case PTR:
-                if(neki instanceof IMC.MEM8 b){
-                    pfx = b.addr;
-                }else if(neki instanceof IMC.MEM1 b){
-                    pfx = b.addr;
-                }
-                //Report.warning(pfxExpr,"IDK");
-
-                //pfx = new IMC.CONST(Long.valueOf(0));
-        }
-        ((NekiNovega)arg).lastExpr = pfx;
-
-        /*IMC.Expr neki = (IMC.Expr)pfxExpr.expr.accept(this, arg);
-        IMC.BINOP binop = new IMC.BINOP(
-                IMC.BINOP.Oper.NEG,
-                neki,
-                null
-        );*/
-        return ImcGen.expr.put(pfxExpr, pfx);
+        return null;
     }
 
     @Override
