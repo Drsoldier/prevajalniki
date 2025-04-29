@@ -282,6 +282,27 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
         return Memory.accesses.put(compDefn, access);
     }
     
+    public String popraviString(String s){
+        String ret = "";
+        //ret+='"';
+        for(int i=0; i<s.length(); i++){
+            if(s.charAt(i)=='\\'){
+                // \0xzz
+                i++;
+                i++;
+                String subStr = s.substring(i, i+2);
+                int tmp = Integer.parseInt(subStr);
+                ret+=(char)tmp;
+            }else{
+                ret+=s.charAt(i);
+            }
+        }
+        //ret+='"';
+        //ret+=(char)0;
+        Report.info("from string " + s + " to string " + ret);
+        return ret;
+    }
+
     @Override
     public Object visit(AST.AtomExpr atomExpr, Neki arg) {
         switch (atomExpr.type) {
@@ -289,7 +310,9 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
             long size = (long)(atomExpr.value.length());
             String str = atomExpr.value.substring(1, atomExpr.value.length()-1);
             var lbl = new MEM.Label();
-            var idkAnymore = new MEM.AbsAccess(size-1, lbl, str);
+            var x = popraviString(str);
+            Report.info(popraviString(str));
+            var idkAnymore = new MEM.AbsAccess(size-2, lbl, x);
             //var idkAnymore = new MEM.RelAccess(1l, 1l, 1l);
             //Report.info(idkAnymore.label.name +  " " + str);
             //AST.Type node = atomExpr.type.accept(this, null);

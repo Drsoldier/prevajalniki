@@ -1,8 +1,39 @@
 fun putchar(c: char): void
-
+var x : ^int
+var y : ^int
 fun main(): int =
-    puts("s"),
+    let 
+        var p: ^char
+    in
+        p = "abcd",
+        putchar(p^),
+        p = {{p : int} + 1 : ^char},
+        putchar(p^),
+        p = {{p : int} + 1 : ^char},
+        putchar(p^),
+        p = {{p : int} + 1 : ^char},
+        putchar(p^),
+        p = {{p : int} + 1 : ^char}
+    end,
+    puts2("abcd"),
+    puts("abcd"),
     return 0
+
+
+fun puts2(str: ^char): void =
+    let 
+        var p: ^char
+    in
+        p = str,
+        putchar(p^),
+        p = {{p : int} + 1 : ^char},
+        putchar(p^),
+        p = {{p : int} + 1 : ^char},
+        putchar(p^),
+        p = {{p : int} + 1 : ^char},
+        putchar(p^),
+        p = {{p : int} + 1 : ^char}
+    end
 
 fun puts(str: ^char): void =
     let 

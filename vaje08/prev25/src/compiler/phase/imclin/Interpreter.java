@@ -13,10 +13,10 @@ public class Interpreter {
 
     private Scanner scanner = new Scanner(System.in);
 
-    private boolean debug = true;
+    private boolean debug = false;
 
     /** if CJUMP cond is <strong>false</strong>, fall through */
-    private final boolean ENFORCE_FALL_THROUGH = true;
+    private final boolean ENFORCE_FALL_THROUGH = false;
 
     /**
      * if a function, with the same name as a native function, is implemented inside
@@ -519,7 +519,7 @@ public class Interpreter {
             int pc = 0;
             MEM.Label label = null;
             MEM.Label lastLabel = null;
-
+            Report.info("sizeOfStmts:"+stmts.size()+" in frame" +frame.label.name);
             while ((label != chunk.exitLabel) && (lastLabel != chunk.exitLabel)) {
                 if (debug) {
                     pc++;
@@ -536,7 +536,12 @@ public class Interpreter {
                     stmtOffset = offset;
                 }
 
-                var info = new StmtInterpreter.Info();
+                var info     = new StmtInterpreter.Info();
+                //Report.info(stmtOffset+"");
+                if(stmtOffset >= stmts.size()){
+                    Report.warning("\n:-o stmtOffset exceeded size of its own array, breaking...");
+                    break;
+                }
                 label = stmts.get(stmtOffset).accept(new StmtInterpreter(this), info);
                 lastLabel = info.lastLabel;
 

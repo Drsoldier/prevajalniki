@@ -1,5 +1,6 @@
 package compiler.phase.imclin;
 
+import java.util.HashMap;
 import java.util.Vector;
 
 import compiler.phase.abstr.*;
@@ -8,6 +9,7 @@ import compiler.phase.memory.MEM;
 
 public class ChunkContext {
     public Vector<IMC.Stmt> statementsToBeAdded = new Vector<IMC.Stmt>();
+    public HashMap<String, IMC.TEMP> nameTempMap = new HashMap<>();
     public MEM.Label funExit;
     public MEM.Label funEntry;
     public MEM.Temp rv;
