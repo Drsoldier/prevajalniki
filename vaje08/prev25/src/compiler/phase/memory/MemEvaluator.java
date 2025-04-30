@@ -284,35 +284,58 @@ public class MemEvaluator implements AST.FullVisitor<Object, Neki> {
     
     public String popraviString(String s){
         String ret = "";
-        //ret+='"';
-        for(int i=0; i<s.length(); i++){
-            if(s.charAt(i)=='\\'){
-                // \0xzz
+        
+        for (int i = 0; i < s.length(); i++) {
+            if (s.charAt(i) == '\\') {
                 i++;
-                i++;
-                String subStr = s.substring(i, i+2);
-                int tmp = Integer.parseInt(subStr);
-                ret+=(char)tmp;
-            }else{
-                ret+=s.charAt(i);
+                if (s.charAt(i) == '"') {
+                    ret += '"';
+                } else if (s.charAt(i) == '0' && s.charAt(i + 1) == 'x') {
+                    var subs = s.substring(i + 2, i + 4);
+                    ret += (char) Integer.parseInt(subs, 16);
+                    i += 3;
+                }
+            } else {
+                ret += s.charAt(i);
             }
         }
-        //ret+='"';
-        //ret+=(char)0;
-        Report.info("from string " + s + " to string " + ret);
+        //Report.info("ugabuga:"+ret + "[size:" + ret.length() + "]");
         return ret;
+    }
+    
+    public int popraviString2(String s){
+        String ret = "";
+        int jk = 0;
+        for (int i = 0; i < s.length(); i++, jk++) {
+            if (s.charAt(i) == '\\') {
+                i++;
+                //jk++;
+                if (s.charAt(i) == '"') {
+                    ret += '"';
+                } else if (s.charAt(i) == '0' && s.charAt(i + 1) == 'x') {
+                    var subs = s.substring(i + 2, i + 4);
+                    ret += (char) Integer.parseInt(subs, 16);
+                    i += 3;
+                }
+            } else {
+                ret += s.charAt(i);
+                
+            }
+        }
+        //Report.info("ugabuga:"+ret + "[size:" + ret.length() + "]");
+        return jk+1;
     }
 
     @Override
     public Object visit(AST.AtomExpr atomExpr, Neki arg) {
         switch (atomExpr.type) {
         case STR:
-            long size = (long)(atomExpr.value.length());
             String str = atomExpr.value.substring(1, atomExpr.value.length()-1);
             var lbl = new MEM.Label();
             var x = popraviString(str);
-            Report.info(popraviString(str));
-            var idkAnymore = new MEM.AbsAccess(size-2, lbl, x);
+            var y = popraviString2(str);
+            var idkAnymore = new MEM.AbsAccess(y, lbl, x);
+            
             //var idkAnymore = new MEM.RelAccess(1l, 1l, 1l);
             //Report.info(idkAnymore.label.name +  " " + str);
             //AST.Type node = atomExpr.type.accept(this, null);

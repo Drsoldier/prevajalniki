@@ -225,7 +225,7 @@ public class Compiler {
 					imclin.log();
 					//try{
 
-						if (true) {
+						if (false) {
 							Interpreter interpreter = new Interpreter(ImcLin.dataChunks(), ImcLin.codeChunks());
 							try{
 								System.out.println("EXIT CODE: " + interpreter.run("_main"));

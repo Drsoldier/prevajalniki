@@ -1,4 +1,6 @@
 fun putchar(c: char): void
+fun putint(c: int): void
+
 var x : ^int
 var y : ^int
 fun main(): int =
@@ -25,14 +27,15 @@ fun puts2(str: ^char): void =
         var p: ^char
     in
         p = str,
-        putchar(p^),
-        p = {{p : int} + 1 : ^char},
-        putchar(p^),
-        p = {{p : int} + 1 : ^char},
-        putchar(p^),
-        p = {{p : int} + 1 : ^char},
-        putchar(p^),
-        p = {{p : int} + 1 : ^char}
+        putchar(str^),
+        str = {{str : int} + 1 : ^char},
+        putchar(str^),
+        str = {{str : int} + 1 : ^char},
+        putchar(str^),
+        str = {{str : int} + 1 : ^char},
+        putchar(str^),
+        str = {{str : int} + 1 : ^char},
+        putchar(str^)
     end
 
 fun puts(str: ^char): void =
@@ -46,4 +49,5 @@ fun puts(str: ^char): void =
             putchar(p^),
             p = {{p : int} + 1 : ^char}
         end
+        
     end

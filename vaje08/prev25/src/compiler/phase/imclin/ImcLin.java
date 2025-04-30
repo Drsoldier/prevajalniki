@@ -119,6 +119,7 @@ public class ImcLin extends Phase {
 			logger.addAttribute("epiloguelabel", codeChunk.exitLabel.name);
 			log(codeChunk.frame);
 			for (IMC.Stmt stmt : codeChunk.stmts()) {
+				//System.out.println(stmt.toString());
 				logger.begElement("stmt");
 				stmt.log(logger);
 				logger.endElement();

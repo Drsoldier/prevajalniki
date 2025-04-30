@@ -84,9 +84,7 @@ public class Interpreter {
         this.jumpMemLabels = new HashMap<MEM.Label, Integer>();
         this.callMemLabels = new HashMap<MEM.Label, LIN.CodeChunk>();
         this.labelsToAddr = new Vector<>();
-        System.out.println("about to load CodeChunks");
         loadCodeChunks(codeChunks);
-        System.out.println("loadedCodeChunks");
     }
 
     private void loadDataChunks(Vector<LIN.DataChunk> dataChunks) {
@@ -282,6 +280,9 @@ public class Interpreter {
         @Override
         public Long visit(IMC.MEM8 imcMem, Object arg) {
             var addr = imcMem.addr.accept(this, null);
+            if(addr == null) {
+                Report.info("Addr is null - currently in interp");
+            }
             if (addr == 0) {
                 throw new Report.Error("Null pointer dereference");
             }
@@ -476,6 +477,7 @@ public class Interpreter {
 
             var fn = nativeFunctions.get(addrLabel.name);
             if (fn != null) {
+                //Report.info("Calling native function: " + addrLabel.name);
                 fn.call(this.interpreter, imcCall.args.size() - 1);
                 return;
             }
@@ -519,7 +521,7 @@ public class Interpreter {
             int pc = 0;
             MEM.Label label = null;
             MEM.Label lastLabel = null;
-            Report.info("sizeOfStmts:"+stmts.size()+" in frame" +frame.label.name);
+            //Report.info("sizeOfStmts:"+stmts.size()+" in frame" +frame.label.name);
             while ((label != chunk.exitLabel) && (lastLabel != chunk.exitLabel)) {
                 if (debug) {
                     pc++;
@@ -535,9 +537,11 @@ public class Interpreter {
                     }
                     stmtOffset = offset;
                 }
-
-                var info     = new StmtInterpreter.Info();
-                //Report.info(stmtOffset+"");
+                if(stmts == null){
+                    Report.warning(frame.label.name + " stmts are null");
+                    break;
+                }
+                var info = new StmtInterpreter.Info();
                 if(stmtOffset >= stmts.size()){
                     Report.warning("\n:-o stmtOffset exceeded size of its own array, breaking...");
                     break;

@@ -4,4 +4,5 @@ fun ptr() : ^int =
     return ^m
 
 fun main(): int =
+    ptr()^ = 5,
     return m-5

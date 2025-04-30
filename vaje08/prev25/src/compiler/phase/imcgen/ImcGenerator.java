@@ -384,46 +384,6 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
         return ImcGen.expr.put(pfxExpr, pfx);
     }
     
-    /*@Override
-    public Object visit(AST.PfxExpr pfxExpr, Object arg) {
-
-        NekiNovega nekiNovega = (NekiNovega)arg;
-        var neki = (IMC.Expr)pfxExpr.subExpr.accept(this, arg);
-        if(neki == null){
-            //Report.warning(pfxExpr, "PfxExpr: " + pfxExpr.toString());
-            neki = new IMC.CONST(Long.valueOf(0));
-        }
-        TYP.Type t = SemAn.ofType.get(pfxExpr.subExpr);
-
-        IMC.Expr pfx = null;
-        switch(pfxExpr.oper) {
-            case NOT:
-                pfx = new IMC.UNOP(IMC.UNOP.Oper.NOT, neki);
-
-                break;
-            case ADD:
-                
-                break;
-            case SUB:
-                pfx = new IMC.UNOP(IMC.UNOP.Oper.NEG, neki);
-                break;
-            case PTR:
-                if(t instanceof TYP.BoolType || t instanceof TYP.CharType){
-                    pfx = new IMC.MEM1(neki);
-                }else {
-                    pfx = new IMC.MEM8(neki);
-                }
-        }
-        ((NekiNovega)arg).lastExpr = pfx;
-
-        /*IMC.Expr neki = (IMC.Expr)pfxExpr.expr.accept(this, arg);
-        IMC.BINOP binop = new IMC.BINOP(
-                IMC.BINOP.Oper.NEG,
-                neki,
-                null
-        );
-        return ImcGen.expr.put(pfxExpr, pfx);
-    }*/
 
     @Override
     public IMC.Expr visit(CastExpr castExpr, Object arg) {
@@ -555,9 +515,10 @@ public class ImcGenerator implements AST.FullVisitor<Object, Object> {
 
     @Override
     public IMC.Expr visit(SizeExpr sizeExpr, Object arg) {
-        var fuuuuuuuuuuck = SemAn.ofType.get(sizeExpr).accept(MemEvaluator.sizeEval, null);
-        
-        return ImcGen.expr.put(sizeExpr, new IMC.CONST(fuuuuuuuuuuck));
+        var sizeType = sizeExpr.type.accept(this, arg);
+        if (sizeType instanceof TYP.BoolType || sizeType instanceof TYP.CharType)
+            return ImcGen.expr.put(sizeExpr, new IMC.CONST(1));
+        return ImcGen.expr.put(sizeExpr, new IMC.CONST(8));
     }
 
     @Override
