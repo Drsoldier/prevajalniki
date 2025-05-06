@@ -7,12 +7,13 @@ import compiler.phase.abstr.AST;
 import compiler.phase.imcgen.IMC;
 import compiler.phase.imcgen.ImcGen;
 import compiler.phase.imclin.LIN;
+import compiler.phase.imclin.LIN.Chunk;
 import compiler.phase.memory.MEM;
 import compiler.phase.memory.Memory;
 
 public class AsmGen extends Phase{
 
-    	/** All data chunks of the program. */
+	/** All data chunks of the program. */
 	private final static Vector<LIN.DataChunk> dataChunks = new Vector<LIN.DataChunk>();
 
 	/** All code chinks of the program. */
@@ -27,6 +28,42 @@ public class AsmGen extends Phase{
 			linLogger.log(dataChunk);
 		for (LIN.CodeChunk codeChunk : codeChunks)
 			linLogger.log(codeChunk);
+	}
+
+	/**
+	 * Adds a data chunk to a collection of all data chunks of the program.
+	 * 
+	 * @param dataChunk A data chunk.
+	 */
+	public static void addDataChunk(LIN.DataChunk dataChunk) {
+		dataChunks.add(dataChunk);
+	}
+
+	/**
+	 * Returns a collection of all data chunks of the program.
+	 * 
+	 * @return A collection of all data chunks of the program.
+	 */
+	public static Vector<LIN.DataChunk> dataChunks() {
+		return new Vector<LIN.DataChunk>(dataChunks);
+	}
+
+	/**
+	 * Adds a code chunk to a collection of all code chunks of the program.
+	 * 
+	 * @param codeChunk A code chunk.
+	 */
+	public static void addCodeChunk(LIN.CodeChunk codeChunk) {
+		codeChunks.add(codeChunk);
+	}
+
+	/**
+	 * Returns a collection of all code chunks of the program.
+	 * 
+	 * @return A collection of all code chunks of the program.
+	 */
+	public static Vector<LIN.CodeChunk> codeChunks() {
+		return new Vector<LIN.CodeChunk>(codeChunks);
 	}
 
     public static class Logger implements AST.NullVisitor<Object, String> {
