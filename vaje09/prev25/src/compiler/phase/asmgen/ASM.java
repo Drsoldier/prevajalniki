@@ -2,7 +2,7 @@ package compiler.phase.asmgen;
 
 import java.util.Vector;
 
-import compiler.common.logger.Loggable;
+import compiler.common.logger.*;
 import compiler.common.report.Report;
 import compiler.phase.imcgen.IMC;
 import compiler.phase.imcgen.IMC.BINOP;
@@ -22,6 +22,9 @@ import compiler.phase.imcgen.IMC.TEMP;
 import compiler.phase.imcgen.IMC.UNOP;
 import compiler.phase.memory.MEM;
 
+
+// https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html
+
 public class ASM {
 
     public static abstract class Instr implements Loggable {
@@ -32,6 +35,76 @@ public class ASM {
    
     public static abstract class Chunk {
 	}
+
+	public static class AsmInstr extends Instr{
+		
+
+		public Vector<IMC.Expr> uses;
+		public Vector<IMC.Expr> defs;
+
+		enum Type {
+			// MATH OPERATIONS
+			ADDI, // add immediate
+			ADD, // add
+			SUB, // subtract
+			
+			
+			LUI, // load upper immediate
+
+			// LOGICAL OPERATIONS
+			ORI, // OR immediate
+			ANDI, // AND immediate
+			
+			//BIT MANIPULATION
+			SLLI, // shift logical left immediate
+			SRLI, // shift logical right immediate
+			SRL, // shift right logical
+			 
+		}
+
+		/** The instruction's opcode. */
+		public final Type opcode;
+
+		/** The instruction's operands. */
+		public final Vector<IMC.Expr> operands;
+
+		public AsmInstr(Type opcode, Vector<IMC.Expr> operands) {
+			this.opcode = opcode;
+			this.operands = new Vector<IMC.Expr>(operands);
+			uses = new Vector<IMC.Expr>();
+			defs = new Vector<IMC.Expr>();
+		}
+
+
+
+
+		@Override
+		public void log(Logger logger) {
+			logger.begElement("asm");
+			logger.addAttribute("instruction", toString());
+			logger.endElement();
+		}	
+
+		public <Result, Arg> Result accept(Visitor<Result, Arg> visitor, Arg accArg) {
+			return visitor.visit(this, accArg);
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append(opcode);
+			sb.append(" ");
+			for (int i = 0; i < operands.size(); i++) {
+				if (i > 0)
+					sb.append(", ");
+				sb.append(operands.get(i).toString());
+			}
+			return sb.toString();
+		}
+
+	}
+
+
 
 	/**
 	 * A chuck of data.
@@ -113,6 +186,10 @@ public class ASM {
 	 * @param <Arg>    The argument the visitor carries around.
 	 */
 	public static interface Visitor<Result, Arg> {
+
+		public default Result visit(AsmInstr asmInstr, Arg visArg) {
+			throw new Report.InternalError();
+		}
 
 		public default Result visit(BINOP binOp, Arg visArg) {
 			throw new Report.InternalError();
