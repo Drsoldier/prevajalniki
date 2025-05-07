@@ -242,9 +242,8 @@ public class Compiler {
 
 
 					
-				try (AsmGen asmGen = new AsmGen()) {
-					Abstr.tree.accept(new AsmGenerator(), null);
-					asmGen.log();
+				try (AsmGen asmGen = new AsmGen(ImcLin.codeChunks())) {
+					System.out.println(asmGen.toString());
 				}
 				if (cmdLineOptValues.get("--target-phase").equals("asmgen"))
 				break;

@@ -315,7 +315,7 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, Mode> {
 		}
 		if(arg==Mode.RESOLVE){
 			TYP.Type a = compDefn.type.accept(this, arg);
-			Report.info(a.toString());
+			//Report.info(a.toString());
 			return SemAn.ofType.put(compDefn, a);
 		}
 

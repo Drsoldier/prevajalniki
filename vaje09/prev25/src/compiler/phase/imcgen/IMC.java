@@ -37,7 +37,19 @@ public class IMC {
 	public static class BINOP extends Expr {
 
 		public enum Oper {
-			OR, AND, EQU, NEQ, LTH, GTH, LEQ, GEQ, ADD, SUB, MUL, DIV, MOD,
+			OR, 
+			AND, 
+			EQU, 
+			NEQ, 
+			LTH, 
+			GTH, 
+			LEQ, 
+			GEQ, 
+			ADD, 
+			SUB, 
+			MUL, 
+			DIV, 
+			MOD,
 		}
 
 		/** The operator. */

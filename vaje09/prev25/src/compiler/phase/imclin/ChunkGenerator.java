@@ -30,9 +30,7 @@ public class ChunkGenerator implements AST.FullVisitor<Object, Object> {
 
         statements.add(new IMC.LABEL(entryLabel));
 
-        defFunDefn.stmts.forEach(
-            stmt
-            -> statements.addAll(
+        defFunDefn.stmts.forEach(stmt -> statements.addAll(
                 ImcGen.stmt.get(stmt).accept(new StatementEvaluator(), null)
             )
         );

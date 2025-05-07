@@ -9,6 +9,18 @@ public class ExpressionEvaluator
     implements IMC.Visitor<IMC.Expr, Vector<IMC.Stmt>> {
 
     public IMC.Expr visit(IMC.BINOP binOp, Vector<IMC.Stmt> stmts) {
+        if(
+        binOp.oper == IMC.BINOP.Oper.AND || 
+        binOp.oper == IMC.BINOP.Oper.OR || 
+        binOp.oper == IMC.BINOP.Oper.GEQ || 
+        binOp.oper == IMC.BINOP.Oper.GTH ||
+        binOp.oper == IMC.BINOP.Oper.LTH ||
+        binOp.oper == IMC.BINOP.Oper.LEQ || 
+        binOp.oper == IMC.BINOP.Oper.EQU || 
+        binOp.oper == IMC.BINOP.Oper.NEQ  
+        ) { 
+            return new IMC.BINOP(binOp.oper, binOp.fstExpr.accept(this, stmts), binOp.sndExpr.accept(this, stmts));
+        }
         IMC.Expr fstExpr = binOp.fstExpr.accept(this, stmts);
         MEM.Temp temp1 = new MEM.Temp();
         stmts.add(new IMC.MOVE(new IMC.TEMP(temp1), fstExpr));
