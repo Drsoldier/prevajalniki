@@ -47,12 +47,13 @@ public class AsmGen extends Phase{
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (LIN.CodeChunk cc : codeChunk) {
+            ASM.AsmChunk asmChunk = new ASM.AsmChunk();
             sb.append("######" + cc.frame.label.name + "#####\n");
-            sb.append(cc.frame.label.name+"#TODO: PROLOGUE\n");
+            sb.append(cc.frame.label.name+"#TODO IN NEXT PHASES: PROLOGUE\n");
             for(IMC.Stmt stmt : cc.stmts()) {
-                sb.append(stmt.accept(asmGenerator, null));
+                sb.append(stmt.accept(asmGenerator, asmChunk));
             }
-            sb.append(cc.exitLabel.name+"#TODO: EPILOGUE\n");
+            sb.append(cc.exitLabel.name+"#TODO IN NEXT PHASES: EPILOGUE\n");
 
             sb.append("####################\n");
         }

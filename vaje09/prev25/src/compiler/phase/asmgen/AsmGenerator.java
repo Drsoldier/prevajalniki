@@ -4,6 +4,7 @@ package compiler.phase.asmgen;
 import java.util.Vector;
 import compiler.phase.abstr.AST;
 import compiler.phase.abstr.AST.Nodes;
+import compiler.phase.asmgen.ASM.AsmChunk;
 import compiler.phase.imcgen.IMC;
 import compiler.phase.imcgen.IMC.*;
 import compiler.phase.imcgen.NekiNovega;
@@ -12,7 +13,7 @@ import compiler.common.report.*;
 import compiler.phase.imclin.*;
 
 
-public class AsmGenerator implements IMC.Visitor<Object, Object> {
+public class AsmGenerator implements IMC.Visitor<Object, AsmChunk> {
     
     public AsmGenerator() {
         // Constructor
@@ -21,7 +22,7 @@ public class AsmGenerator implements IMC.Visitor<Object, Object> {
     public AsmGenerator(Vector<LIN.CodeChunk> chunk) {
         vseFunkcije = chunk;
     }
-	public Object visit(Vector<IMC.Instr> nodes, Object arg) {
+	public Object visit(Vector<IMC.Instr> nodes, AsmChunk arg) {
         for (final IMC.Instr node : nodes)   {
             node.accept(this, arg);
 		}
@@ -30,7 +31,7 @@ public class AsmGenerator implements IMC.Visitor<Object, Object> {
     public Vector<LIN.CodeChunk> vseFunkcije;
 
     @Override
-    public Object visit(IMC.CJUMP cjump, Object arg) {
+    public Object visit(IMC.CJUMP cjump, AsmChunk arg) {
         IMC.BINOP binop = (IMC.BINOP) cjump.cond;
         String lhs = binop.fstExpr.toString(); 
         String rhs = binop.sndExpr.toString();
@@ -78,7 +79,7 @@ public class AsmGenerator implements IMC.Visitor<Object, Object> {
         return instr + "\n" + falseJump;
     }
 
-    public String visit(IMC.ESTMT estmt, Object arg){
+    public String visit(IMC.ESTMT estmt, AsmChunk arg){
         if(estmt.expr instanceof IMC.CALL x) {
             if(x.addr instanceof IMC.NAME y) {
                 IMC.TEMP x2 = new IMC.TEMP(new MEM.Temp());
@@ -107,7 +108,7 @@ public class AsmGenerator implements IMC.Visitor<Object, Object> {
                     "jal " + 
                     lbl.name + 
                     "\n"+
-                    "add " + x2.temp.toString() + ", x0," + chunk2.frame.RV + "\n"+
+                    "ld " + x2.temp.toString() + ", 0(x1)\n"+
                     sb.toString();
             }
         }
@@ -115,7 +116,7 @@ public class AsmGenerator implements IMC.Visitor<Object, Object> {
     }
 
     @Override
-    public String visit(IMC.JUMP jump, Object arg) {
+    public String visit(IMC.JUMP jump, AsmChunk arg) {
         IMC.NAME x = (IMC.NAME)jump.addr;
         MEM.Label lbl = x.label;
         return "jal x0, " + lbl.name + "\n";
@@ -145,13 +146,13 @@ public class AsmGenerator implements IMC.Visitor<Object, Object> {
     }
 
     @Override
-    public String visit(IMC.LABEL label, Object arg) {
+    public String visit(IMC.LABEL label, AsmChunk arg) {
         MEM.Label lbl = label.label;
         return lbl.name + "\t#this is in a new line, this should be in line with the documentation for labels in RISC-V  \n";
     }
 
     @Override
-    public String visit(IMC.MOVE move, Object arg) {
+    public String visit(IMC.MOVE move, AsmChunk arg) {
         if(move.dst instanceof IMC.TEMP x && move.src instanceof IMC.BINOP y){
             String src1 = y.fstExpr.toString();
             String src2 = y.sndExpr.toString();
@@ -292,7 +293,7 @@ public class AsmGenerator implements IMC.Visitor<Object, Object> {
                     "jal " + 
                     lbl.name + 
                     "\n"+
-                    "add " + x.temp.toString() + ", x0," + chunk2.frame.RV + "\n"+
+                    "ld " + x.temp.toString() + ", 0(x1)\n"+
                     sb.toString();
             }
             StringBuilder sb = new StringBuilder();
@@ -301,20 +302,16 @@ public class AsmGenerator implements IMC.Visitor<Object, Object> {
                 sb.append("addi sp, x0, 8\n");
             }
             sb.append("###fixed sp###\n");
+            //arg.addLine(new ASM.SingleRegInstr("jal", ));
             return push(y.args)+"jal " + ((IMC.TEMP)(y.addr)).temp.toString() + "\n" + sb.toString();
         }
-
-
-
-
-
 
         Report.warning(move.toString());
         throw new Report.InternalError("What the sigma");
     }
 
     @Override
-    public String visit(IMC.STMTS stmts, Object arg) {
+    public String visit(IMC.STMTS stmts, AsmChunk arg) {
         throw new Report.InternalError("How did you manage to visit stmts after the linearization?");
     }
 }

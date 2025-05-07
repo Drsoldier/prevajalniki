@@ -61,6 +61,10 @@ public class ASM {
 		}
     }
 
+    public static class Jump extends Line{
+        
+    }
+
     
 	public class SingleRegInstr extends Instr{
 		public IMC.TEMP rs1;
@@ -73,8 +77,8 @@ public class ASM {
         }
 		
 		public String toString() {
-			return opcode + " " + rd.toString() + ", " + rs1.toString();
-		}
+            return String.format("%s %s, %s", opcode, rd, rs1);
+        }
 	}
 
 	public class DoubleRegInstr extends Instr{
@@ -93,7 +97,7 @@ public class ASM {
 
 		
 		public String toString() {
-			return opcode + " " + rd.toString() + ", " + rs1.toString() + ", " + rs2.toString();
+			return String.format("%s %s, %s, %s", opcode, rd, rs1, rs2);
 		}
 	}
 
@@ -119,7 +123,7 @@ public class ASM {
 			this.def.add(rd);
 		}
 		public String toString() {
-			return opcode + " " + rd.toString() + ", [" + rs1.toString()+"]"+offset;
+			return String.format("%s %s, %l(%s)", opcode, rd.toString(), offset, rs1.toString());
 		}
 	}
 
