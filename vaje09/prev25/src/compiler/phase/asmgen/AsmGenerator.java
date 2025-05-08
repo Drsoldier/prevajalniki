@@ -5,16 +5,18 @@ import java.util.Vector;
 import compiler.phase.abstr.AST;
 import compiler.phase.abstr.AST.Nodes;
 import compiler.phase.asmgen.ASM.AsmChunk;
+import compiler.phase.asmgen.ASM.DoubleRegInstr;
 import compiler.phase.imcgen.IMC;
 import compiler.phase.imcgen.IMC.*;
 import compiler.phase.imcgen.NekiNovega;
 import compiler.phase.memory.MEM;
+import compiler.phase.asmgen.ASM.*;
 import compiler.common.report.*;
 import compiler.phase.imclin.*;
 
 
 public class AsmGenerator implements IMC.Visitor<Object, AsmChunk> {
-    
+    ASM neki = new ASM();
     public AsmGenerator() {
         // Constructor
     }
@@ -33,6 +35,8 @@ public class AsmGenerator implements IMC.Visitor<Object, AsmChunk> {
     @Override
     public Object visit(IMC.CJUMP cjump, AsmChunk arg) {
         IMC.BINOP binop = (IMC.BINOP) cjump.cond;
+        IMC.LABEL tLbl = new IMC.LABEL(((IMC.NAME)cjump.posAddr).label);
+        IMC.LABEL fLbl = new IMC.LABEL(((IMC.NAME)cjump.negAddr).label);
         String lhs = binop.fstExpr.toString(); 
         String rhs = binop.sndExpr.toString();
         String labelTrue = cjump.posAddr.toString();             // true branch label
@@ -42,30 +46,107 @@ public class AsmGenerator implements IMC.Visitor<Object, AsmChunk> {
         switch (binop.oper) {
         case AND : 
             IMC.TEMP x = new IMC.TEMP(new MEM.Temp());
+            arg.addLine(
+                neki.new DoubleRegInstr
+                ("and", 
+                new Register(x),
+                new Register(lhs), 
+                new Register(rhs))
+            );
             instr = String.format("and %s, %s, %s", x.toString(), lhs, rhs) + "\n";
+            arg.addLine(
+                new BreakIf
+                ("bne", 
+                new Register(x),
+                ASM.zero,
+                new Label(tLbl))
+            );
             instr += String.format("bne %s, %s, %s", x.toString(), x.toString(), "x0");
             break;
         case OR:
             IMC.TEMP y = new IMC.TEMP(new MEM.Temp());
+            arg.addLine(
+                neki.new DoubleRegInstr
+                ("or", 
+                new Register(y),
+                new Register(lhs), 
+                new Register(rhs))
+            );
             instr = String.format("or %s, %s, %s", y.toString(), lhs, rhs) + "\n";
-            instr += String.format("bne %s, %s, %s", y.toString(), y.toString(), "x0");
+            arg.addLine(
+                new BreakIf
+                ("bne", 
+                new Register(y),
+                ASM.zero,
+                new Label(tLbl)
+                )
+            );
+            instr += String.format("bne %s, %s, %s", y.toString(), "x0", labelTrue);
             break;
         case EQU:
+            arg.addLine(
+                new BreakIf
+                ("beq", 
+                new Register(lhs),
+                new Register(rhs),
+                new Label(tLbl)
+                )
+            );
             instr = String.format("beq %s, %s, %s", lhs, rhs, labelTrue);
             break;
         case NEQ: 
+            arg.addLine(
+                new BreakIf
+                ("bne", 
+                new Register(lhs),
+                new Register(rhs),
+                new Label(tLbl)
+                )
+            );
             instr = String.format("bne %s, %s, %s", lhs, rhs, labelTrue);
             break;
         case LTH: 
+            arg.addLine(
+                new BreakIf
+                ("blt", 
+                new Register(lhs),
+                new Register(rhs),
+                new Label(tLbl)
+                )
+            );
             instr = String.format("blt %s, %s, %s", lhs, rhs, labelTrue);
             break;
         case LEQ: 
+            arg.addLine(
+                new BreakIf
+                ("ble", 
+                new Register(lhs),
+                new Register(rhs),
+                new Label(tLbl)
+                )
+            );
             instr = String.format("ble %s, %s, %s", lhs, rhs, labelTrue);
             break;
         case GTH: 
+            arg.addLine(
+                new BreakIf
+                ("bgt", 
+                new Register(lhs),
+                new Register(rhs),
+                new Label(tLbl)
+                )
+            );
             instr = String.format("bgt %s, %s, %s", lhs, rhs, labelTrue);
             break;
-        case GEQ: 
+        case GEQ:
+            arg.addLine(
+                new BreakIf
+                ("bge", 
+                new Register(lhs),
+                new Register(rhs),
+                new Label(tLbl)
+                )
+            );
             instr = String.format("bge %s, %s, %s", lhs, rhs, labelTrue);
             break;
         default:
@@ -74,7 +155,15 @@ public class AsmGenerator implements IMC.Visitor<Object, AsmChunk> {
         }
 
         // Emit false jump after the conditional branch
-        String falseJump = String.format("j %s", labelFalse);
+        arg.addLine(
+            new BreakIf
+            ("jal", 
+            ASM.zero,
+            ASM.zero,
+            new Label(fLbl)
+            )
+        );
+        String falseJump = String.format("jal x0,%s", labelFalse);
 
         return instr + "\n" + falseJump;
     }
@@ -148,6 +237,7 @@ public class AsmGenerator implements IMC.Visitor<Object, AsmChunk> {
     @Override
     public String visit(IMC.LABEL label, AsmChunk arg) {
         MEM.Label lbl = label.label;
+        arg.addLine(new ASM.Label(label));
         return lbl.name + "\t#this is in a new line, this should be in line with the documentation for labels in RISC-V  \n";
     }
 

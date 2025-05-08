@@ -1,6 +1,7 @@
 package compiler.phase.asmgen;
 
 import java.util.Vector;
+import java.util.HashMap;
 
 import compiler.phase.Phase;
 import compiler.phase.abstr.AST;
@@ -20,6 +21,8 @@ public class AsmGen extends Phase{
     AsmGenerator asmGenerator;
     private static Vector<LIN.CodeChunk> codeChunk = new Vector<LIN.CodeChunk>();
     
+    public static HashMap<LIN.CodeChunk, ASM.AsmChunk> codeChunkToAsmChunk = new HashMap<LIN.CodeChunk, ASM.AsmChunk>();
+
     public AsmGen() {
         super("asmgen");
     }
@@ -53,6 +56,7 @@ public class AsmGen extends Phase{
             for(IMC.Stmt stmt : cc.stmts()) {
                 sb.append(stmt.accept(asmGenerator, asmChunk));
             }
+            codeChunkToAsmChunk.put(cc, asmChunk);
             sb.append(cc.exitLabel.name+"#TODO IN NEXT PHASES: EPILOGUE\n");
 
             sb.append("####################\n");

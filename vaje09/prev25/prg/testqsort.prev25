@@ -6,14 +6,13 @@ var N: int
 fun main(): int =
     N = 42,
     let var arr: ^int in
-        #arr = new(N * sizeof int),
+        arr = new(N * sizeof int),
 
-        #set_array(arr, N),
-        #print_array(arr, N),
+        set_array(arr, N),
+        print_array(arr, N),
 
-        #quicksort(arr, 0, N - 1),
-        #print_array(arr, N)
-        1+1
+        quicksort(arr, 0, N - 1),
+        print_array(arr, N)
     end,
     return 0
 
