@@ -2,7 +2,6 @@ package compiler.phase.asmgen;
 
 import java.util.HashMap;
 import java.util.Vector;
-import java.util.Singleton;
 
 import compiler.common.logger.*;
 import compiler.common.report.Report;
