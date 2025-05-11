@@ -21,7 +21,8 @@ public class ASM {
 	public static final Register zero = new Register("x0");
 	public static final Register retaddr = new Register("x1");
 	public static final Register sp = new Register("x2");
-	public static final Register gp = new Register("x3");
+	public static final Register gp = new Register("gp");
+	public static final Register t2 = new Register("t2");
 
 	public static class AsmChunk {
 		public Vector<Line> lines = new Vector<>();
@@ -60,7 +61,7 @@ public class ASM {
         }
 
         public String toString() {
-            return lbl.label.toString();
+            return lbl.label.name;
         }
     }
 
@@ -94,8 +95,43 @@ public class ASM {
 		}
     }
 
-    
-	public class SingleRegInstr extends Instr{
+    public static class DataEntry extends Line{
+		public String toString(){
+			return ".data";
+		}
+	}
+
+	public static class Data extends Line{
+		String label;
+		String data;
+		boolean neki;
+		public Data(String lbl, String dt, boolean n){
+			label = lbl;
+			data = dt;
+			neki = n;
+		}
+		public String toString(){
+			if(neki){
+				StringBuilder sb = new StringBuilder(label+": .data");
+				sb.append("0".repeat((data.length())));
+				return sb.toString();
+			}
+			
+			StringBuilder sb = new StringBuilder(label+": ");
+			for(int i=0; i<data.length()-1; i++){
+				char x = data.charAt(i);
+				sb.append(Integer.toHexString((int)x) + "");
+			}
+			char x = data.charAt(data.length()-1);
+			sb.append(Integer.toHexString((int)x)+"00");
+			return sb.toString();
+		}
+	}
+
+
+
+
+	public static class SingleRegInstr extends Instr{
 		public Register rs1;
 		public Register rd;
 
@@ -114,6 +150,22 @@ public class ASM {
         }
 	}
 
+
+	public static class LoadAddress extends Instr{
+		public ASM.Label rs1;
+		public Register rd;
+
+		public LoadAddress(String opcode, Register rd, ASM.Label lbl){
+			super(opcode);
+			rs1 = lbl;
+			this.rd = rd;
+			this.def.add(rd);
+		}
+		public String toString(){
+			return String.format("%s %s, %s",opcode, rd, rs1);
+		}
+	}
+
 	public static class BreakIf extends Instr{
 		public String opcode;
 		public Register rs1;
@@ -129,7 +181,7 @@ public class ASM {
 			super.use.add(rs2);
 		}
 		public String toString() {
-			return String.format("break %s, %s", rs1, rs2);
+			return String.format("%s %s, %s", opcode, rs1, rs2);
 		}
 	}
 
@@ -149,7 +201,7 @@ public class ASM {
 	}*/
 
 
-	public class DoubleRegInstr extends Instr{
+	public static class DoubleRegInstr extends Instr{
 		public Register rs1;
 		public Register rs2;
 		public Register rd;
@@ -169,7 +221,7 @@ public class ASM {
 		}
 	}
 
-	public class RegisterAndValue extends Instr{
+	public static class RegisterAndValue extends Instr{
 		public long value;
 		public Register rd;
 		public RegisterAndValue(String opcode, Register rd, long value) {
@@ -178,10 +230,60 @@ public class ASM {
 			this.value = value;
 			this.def.add(rd);
 		}
+
+		public String toString() {
+			return String.format("%s %s, %s", opcode, rd.toString(), value);
+		}
 		
 	}
+
+	public static class MathOperationWithReg extends Instr{
+		public Register rs1;
+		public Register rs2;
+		public Register rd;
+		public long value;
+		public MathOperationWithReg(String opcode, Register rd, Register rs1, Register rs2) {
+			super(opcode);
+			this.rd = rd;
+			this.rs1 = rs1;
+			this.rs2 = rs2;
+			this.use.add(rs1);
+			this.use.add(rs2);
+			this.def.add(rd);
+		}
+		public String toString() {
+			return String.format("%s %s, %s, %s", opcode, rd.toString(), rs1.toString(), rs2.toString());
+		}
+	}
+	public static class MathOperationWithValue extends Instr{
+		public Register rs1;
+		public Register rd;
+		public long value;
+		public MathOperationWithValue(String opcode, Register rd, Register rs1, long value) {
+			super(opcode);
+			this.rd = rd;
+			this.rs1 = rs1;
+			this.value = value;
+			this.use.add(rs1);
+			this.def.add(rd);
+		}
+		public String toString() {
+			return String.format("%s %s, %s, %s", opcode, rd.toString(), rs1.toString(), value);
+		}
+	}
 	
-	public class RegisterAndOffset extends Instr{
+	public static class Comment extends Line{
+		String comm; 
+		public Comment(String x){
+			comm = "#"+x;
+		}
+
+		public String toString(){
+			return comm;
+		}
+	}
+
+	public static class RegisterAndOffset extends Instr{
 		public Register rs1;
 		public Register rd;
 		public long offset;
@@ -189,11 +291,39 @@ public class ASM {
 			super(opcode);
 			this.offset = offset;
 			this.rd = rd;
+			this.rs1 = rs1;
 			this.use.add(rs1);
 			this.def.add(rd);
 		}
 		public String toString() {
-			return String.format("%s %s, %l(%s)", opcode, rd.toString(), offset, rs1.toString());
+			return String.format("%s %s, %s(%s)", opcode, rd.toString(), offset, rs1.toString());
+		}
+	}
+
+
+
+	public static class LoadData extends Instr{
+		public Register rs1;
+		public Register rd;
+		public Object b;
+		public ASM.Label b2;
+		public LoadData(String opcode, Register rd, Register rs1, Object b) {
+			super(opcode);
+			this.b = b;
+			if(b instanceof ASM.Label){
+				this.b2 = (ASM.Label)b;
+			}else{
+				b2 = null;
+			}
+			this.rd = rd;
+			this.rs1 = rs1;
+			this.use.add(rs1);
+			this.def.add(rd);
+		}
+		public String toString() {
+			if(b2 == null)
+				return String.format("%s %s, %s(%s)", opcode, rd.toString(), b.toString(), rs1.toString());
+			return String.format("%s %s, %s(%s)", opcode, rd.toString(), b, rs1.toString());
 		}
 	}
 

@@ -242,7 +242,7 @@ public class Compiler {
 
 
 					
-				try (AsmGen asmGen = new AsmGen(ImcLin.codeChunks())) {
+				try (AsmGen asmGen = new AsmGen(ImcLin.dataChunks(),ImcLin.codeChunks())) {
 					System.out.println(asmGen.toString());
 				}
 				if (cmdLineOptValues.get("--target-phase").equals("asmgen"))

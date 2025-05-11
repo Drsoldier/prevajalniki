@@ -1,0 +1,10 @@
+var x : int
+var tmp : ^char
+fun main() : int =
+    let
+        var y : int
+    in
+        tmp = "aaaa",
+        y = 5,
+        return 5
+    end

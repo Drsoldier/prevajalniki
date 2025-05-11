@@ -3,8 +3,10 @@ package compiler.phase.asmgen;
 import java.util.Vector;
 import java.util.HashMap;
 
+import compiler.common.report.Report;
 import compiler.phase.Phase;
 import compiler.phase.abstr.AST;
+import compiler.phase.asmgen.ASM.Data;
 import compiler.phase.imcgen.IMC;
 import compiler.phase.imcgen.ImcGen;
 import compiler.phase.imclin.ImcLin;
@@ -21,16 +23,19 @@ public class AsmGen extends Phase{
     AsmGenerator asmGenerator;
     private static Vector<LIN.CodeChunk> codeChunk = new Vector<LIN.CodeChunk>();
     
+    Vector<LIN.DataChunk> dc = new Vector<LIN.DataChunk>();
+
     public static HashMap<LIN.CodeChunk, ASM.AsmChunk> codeChunkToAsmChunk = new HashMap<LIN.CodeChunk, ASM.AsmChunk>();
 
     public AsmGen() {
         super("asmgen");
     }
 	
-    public AsmGen(Vector<LIN.CodeChunk> chunk) {
+    public AsmGen(Vector<LIN.DataChunk> dc, Vector<LIN.CodeChunk> chunk) {
         super("asmgen");
         codeChunk = chunk;
-        asmGenerator = new AsmGenerator(chunk);
+        this.dc = dc;
+        asmGenerator = new AsmGenerator(dc, chunk);
     }
     
     public static void addAsmChunk(ASM.AsmChunk asmChunk) {
@@ -49,12 +54,44 @@ public class AsmGen extends Phase{
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        ASM.AsmChunk arg = new ASM.AsmChunk();
+
+        for(LIN.DataChunk dc2 : dc){
+            if(dc2.init == null){
+                String x = "";
+                for(long i=0; i<dc2.size; i++){
+                    x+="\0";
+                }
+                arg.addLine(new Data(
+                    dc2.label.name,
+                    x,
+                    true
+                ));
+            }else{
+                arg.addLine(new Data(
+                    dc2.label.name,
+                    dc2.init,
+                    false
+                ));
+            }
+        }
+        System.out.println(".data");
+        for(var z : arg.lines){
+            System.out.println(z);
+        }
+
+        System.out.println(".text");
         for (LIN.CodeChunk cc : codeChunk) {
             ASM.AsmChunk asmChunk = new ASM.AsmChunk();
+            
             sb.append("######" + cc.frame.label.name + "#####\n");
             sb.append(cc.frame.label.name+"#TODO IN NEXT PHASES: PROLOGUE\n");
             for(IMC.Stmt stmt : cc.stmts()) {
-                sb.append(stmt.accept(asmGenerator, asmChunk));
+                var t = (stmt.accept(asmGenerator, asmChunk));
+                
+            }
+            for(var  x : asmChunk.lines){
+                sb.append(x.toString() + "\n");
             }
             codeChunkToAsmChunk.put(cc, asmChunk);
             sb.append(cc.exitLabel.name+"#TODO IN NEXT PHASES: EPILOGUE\n");
