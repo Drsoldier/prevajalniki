@@ -3,11 +3,8 @@ package compiler.phase.asmgen;
 
 import java.util.Vector;
 
-import compiler.phase.abstr.AST;
-import compiler.phase.abstr.AST.Nodes;
 import compiler.phase.imcgen.IMC;
 import compiler.phase.imcgen.IMC.*;
-import compiler.phase.imcgen.NekiNovega;
 import compiler.phase.memory.MEM;
 import compiler.phase.asmgen.ASM.*;
 import compiler.common.report.*;

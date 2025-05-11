@@ -19,8 +19,8 @@ public class ASM {
 	public static HashMap<String, Register> registers = new HashMap<>();
 
 	public static final Register zero = new Register("x0");
-	public static final Register retaddr = new Register("x1");
-	public static final Register sp = new Register("x2");
+	public static final Register retaddr = new Register("ra");
+	public static final Register sp = new Register("sp");
 	public static final Register gp = new Register("gp");
 	public static final Register t2 = new Register("t2");
 
