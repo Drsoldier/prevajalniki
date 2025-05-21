@@ -15,6 +15,7 @@ import compiler.phase.memory.*;
 import compiler.phase.imcgen.*;
 import compiler.phase.imclin.*;
 import compiler.phase.asmgen.*;
+import compiler.phase.regall.*;
 
 /**
  * The Prev25 compiler.
@@ -256,13 +257,19 @@ public class Compiler {
 
 				try (LiveAn liveAn = new LiveAn(AsmGen.asmChunks())){
 					liveAn.log2();
-					int a = 1;
 				}catch(Exception e){
 
 				}
 
 				if(cmdLineOptValues.get("--target-phase").equals("livan"))
 					break;
+
+
+				try (RegAll x = new RegAll(27)){
+					
+				}
+				if(cmdLineOptValues.get("--target-phase").equals("regall"))
+					break;	
 				// Do not loop... ever.
 				break;
 			}

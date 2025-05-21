@@ -2,6 +2,7 @@ package compiler.phase.asmgen;
 
 import java.util.HashMap;
 import java.util.Vector;
+import java.util.ArrayList;
 
 import compiler.common.logger.*;
 import compiler.common.report.Report;
@@ -26,10 +27,14 @@ public class ASM {
 
 	public static class AsmChunk {
 		public Vector<Line> lines = new Vector<>();
-
+		public MEM.Frame frameOfCode;
 		public void addLine(Line line) {
 			lines.add(line);
 		}
+		public AsmChunk(Vector<? extends Line> x){
+			lines.addAll(x);
+		}
+		
 	}
 
 	public static class Register{
@@ -42,6 +47,11 @@ public class ASM {
 		public Register(IMC.TEMP temp) {
 			this.name = temp.temp.toString();
 			this.connectedTemp = temp;
+			registers.put(name, this);
+		}
+		public Register(MEM.Temp reg){
+			this.name = reg.toString();
+			this.connectedTemp = new IMC.TEMP(reg);
 			registers.put(name, this);
 		}
 		public String toString() {

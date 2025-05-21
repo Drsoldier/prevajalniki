@@ -26,7 +26,7 @@ public class LiveAn extends Phase{
         }
     }
 
-      public static void performLivenessAnalysis(ASM.AsmChunk chunk) {
+    public static void performLivenessAnalysis(ASM.AsmChunk chunk) {
         Map<ASM.Instr, Set<ASM.Register>> in = new HashMap<>();
         Map<ASM.Instr, Set<ASM.Register>> out = new HashMap<>();
         Map<String, ASM.Instr> labelToInstr = new HashMap<>();
@@ -87,6 +87,68 @@ public class LiveAn extends Phase{
         for (ASM.Instr instr : instructions) {
             System.out.println(instr + "\nIN: " + in.get(instr) + "\nOUT: " + out.get(instr) + "\n");
         }
+    }
+
+
+    public ASM.AsmChunk livean(ASM.AsmChunk chunk) {
+        Map<ASM.Instr, Set<ASM.Register>> in = new HashMap<>();
+        Map<ASM.Instr, Set<ASM.Register>> out = new HashMap<>();
+        Map<String, ASM.Instr> labelToInstr = new HashMap<>();
+        Vector<ASM.Instr> instructions = new Vector<>();
+
+        for (int i = 0; i < chunk.lines.size(); i++) {
+            ASM.Line line = chunk.lines.get(i);
+            if (line instanceof ASM.Label label) {
+                if (i + 1 < chunk.lines.size() && chunk.lines.get(i + 1) instanceof ASM.Instr nextInstr) {
+                    labelToInstr.put(label.lbl.label.name, nextInstr);
+                }
+            } else if (line instanceof ASM.Instr instr) {
+                instructions.add(instr);
+                in.put(instr, new HashSet<>());
+                out.put(instr, new HashSet<>());
+            }
+        }
+
+        boolean changed;
+        do {
+            changed = false;
+            for (int i = instructions.size() - 1; i >= 0; i--) {
+                ASM.Instr instr = instructions.get(i);
+
+                Set<ASM.Register> inOld = new HashSet<>(in.get(instr));
+                Set<ASM.Register> outOld = new HashSet<>(out.get(instr));
+
+                // Calculate out[n]
+                Set<ASM.Register> newOut = new HashSet<>();
+                if (instr instanceof ASM.JumpAndLink jmp) {
+                    ASM.Instr target = labelToInstr.get(jmp.label.lbl.label.name);
+                    if (target != null) newOut.addAll(in.getOrDefault(target, Set.of()));
+                } else if (instr instanceof ASM.BreakIf brk) {
+                    ASM.Instr target = labelToInstr.get(brk.lbl.lbl.label.name);
+                    if (target != null) newOut.addAll(in.getOrDefault(target, Set.of()));
+                    if (i + 1 < instructions.size())
+                        newOut.addAll(in.get(instructions.get(i + 1)));
+                } else {
+                    if (i + 1 < instructions.size())
+                        newOut.addAll(in.get(instructions.get(i + 1)));
+                }
+
+                // Calculate in[n]
+                Set<ASM.Register> newIn = new HashSet<>(instr.use);
+                Set<ASM.Register> tempOut = new HashSet<>(newOut);
+                tempOut.removeAll(instr.def);
+                newIn.addAll(tempOut);
+
+                in.put(instr, newIn);
+                out.put(instr, newOut);
+
+                if (!newIn.equals(inOld) || !newOut.equals(outOld)) {
+                    changed = true;
+                }
+            }
+        } while (changed);
+
+        return new ASM.AsmChunk(instructions);
     }
 
 }
