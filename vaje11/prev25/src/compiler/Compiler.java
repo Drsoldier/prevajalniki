@@ -31,14 +31,14 @@ public class Compiler {
 
 	/** Names of command line options. */
 	private static final HashSet<String> cmdLineOptNames = new HashSet<String>(Arrays.asList("--src-file-name",
-			"--dst-file-name", "--target-phase", "--logged-phase", "--xml", "--xsl", "--dev-mode"));
+			"--dst-file-name", "--target-phase", "--logged-phase", "--xml", "--xsl", "--dev-mode", "--num-regs"));
 
 	/** Values of command line options indexed by their command line option name. */
 	private static final HashMap<String, String> cmdLineOptValues = new HashMap<String, String>();
 
 	/** All valid phases name of the compiler. */
 	private static final Vector<String> phaseNames = new Vector<String>(
-			Arrays.asList("none", "all", "lexan", "synan", "abstr", "seman", "memory", "imcgen", "imclin", "asmgen", "livan"));
+			Arrays.asList("none", "all", "lexan", "synan", "abstr", "seman", "memory", "imcgen", "imclin", "asmgen", "livan", "regall"));
 
 	/**
 	 * Returns the value of a command line option.
@@ -264,9 +264,12 @@ public class Compiler {
 				if(cmdLineOptValues.get("--target-phase").equals("livan"))
 					break;
 
-
-				try (RegAll x = new RegAll(27)){
-					
+				int z = Integer.valueOf((cmdLineOptValues.get("--num-regs")==null ? Integer.toString(27) : (cmdLineOptValues.get("--num-regs"))));
+				try (RegAll x = new RegAll()){
+					System.out.println("#####Doing register allocation#####");
+					x.vseFunkcije = (new LiveAn(AsmGen.asmChunks())).performLiveAn();
+					x.allocate();
+					x.log2();
 				}
 				if(cmdLineOptValues.get("--target-phase").equals("regall"))
 					break;	

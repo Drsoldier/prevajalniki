@@ -11,12 +11,20 @@ import compiler.phase.Phase;
 import compiler.phase.asmgen.*;
 
 public class LiveAn extends Phase{
-    Vector<ASM.AsmChunk> koda;
+    public static Vector<ASM.AsmChunk> koda;
+    static Vector<ASM.Register> alrDefinedReg;
+
+    
     public LiveAn(Vector<ASM.AsmChunk> koda){
         super("livean");
         this.koda = koda;
+        alrDefinedReg = new Vector<>();
+        alrDefinedReg.add(ASM.zero);
+        alrDefinedReg.add(ASM.retaddr);
+        alrDefinedReg.add(ASM.sp);
+        alrDefinedReg.add(ASM.t2);
+        alrDefinedReg.add(ASM.gp);
     }
-
     public void log2(){
         for(var x : koda){
             if(x.lines.get(0) instanceof ASM.NameOfFrame l){
@@ -24,6 +32,15 @@ public class LiveAn extends Phase{
             }
             performLivenessAnalysis(x);
         }
+    }
+
+
+    public static Vector<ASM.AsmChunk> performLiveAn(){
+        Vector<ASM.AsmChunk> return2 = new Vector<>();
+        for(var x : koda){
+            return2.add(livean(x));
+        }
+        return return2;
     }
 
     public static void performLivenessAnalysis(ASM.AsmChunk chunk) {
@@ -74,10 +91,13 @@ public class LiveAn extends Phase{
                 Set<ASM.Register> tempOut = new HashSet<>(newOut);
                 tempOut.removeAll(instr.def);
                 newIn.addAll(tempOut);
-
+                
+                for(ASM.Register x : alrDefinedReg){
+                    newIn.remove(x);
+                    tempOut.remove(x);
+                }
                 in.put(instr, newIn);
                 out.put(instr, newOut);
-
                 if (!newIn.equals(inOld) || !newOut.equals(outOld)) {
                     changed = true;
                 }
@@ -90,7 +110,7 @@ public class LiveAn extends Phase{
     }
 
 
-    public ASM.AsmChunk livean(ASM.AsmChunk chunk) {
+    public static ASM.AsmChunk livean(ASM.AsmChunk chunk) {
         Map<ASM.Instr, Set<ASM.Register>> in = new HashMap<>();
         Map<ASM.Instr, Set<ASM.Register>> out = new HashMap<>();
         Map<String, ASM.Instr> labelToInstr = new HashMap<>();
@@ -138,6 +158,14 @@ public class LiveAn extends Phase{
                 Set<ASM.Register> tempOut = new HashSet<>(newOut);
                 tempOut.removeAll(instr.def);
                 newIn.addAll(tempOut);
+                
+                for(ASM.Register x : alrDefinedReg){
+                    newIn.remove(x);
+                    tempOut.remove(x);
+                }
+
+                instr.in = new Vector<>(newIn);
+                instr.out = new Vector<>(tempOut);
 
                 in.put(instr, newIn);
                 out.put(instr, newOut);
