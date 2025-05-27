@@ -1,8 +1,0 @@
-var m : int
-
-fun ptr() : ^int =
-    return ^m
-
-fun main(): int =
-    ptr()^,
-    return m-5
