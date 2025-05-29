@@ -103,8 +103,8 @@ public class AsmGen extends Phase{
                 sb.append(x.toString() + "\n");
             }
             codeChunkToAsmChunk.put(cc, asmChunk);
-            asmChunk.addLine(new ASM.Label(cc.exitLabel.name+"#TODO IN NEXT PHASES: EPILOGUE\n"));
-            asmChunk.addLine(new ASM.Comment("####################\n"));
+            asmChunk.addLine(new ASM.Label(cc.exitLabel.name+""));
+            //asmChunk.addLine(new ASM.Comment("####################\n"));
             addAsmChunk(asmChunk);
             
             sb.append(cc.exitLabel.name+"#TODO IN NEXT PHASES: EPILOGUE\n");

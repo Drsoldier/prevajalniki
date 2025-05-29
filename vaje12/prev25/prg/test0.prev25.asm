@@ -74,10 +74,7 @@ add T9, zero, T8
 add T1, zero, T9
 jal zero, L1
 jal zero, L1
-L1#TODO IN NEXT PHASES: EPILOGUE
-
-#####################
-
+L1
 compiler.phase.memory.MEM$Label@49b0b76 jal x0,compiler.phase.memory.MEM$Label@49b0b76
 #-----End of the main function-----
 #Prologue
@@ -126,11 +123,7 @@ ld t2, -8(sp)
 add T3, zero, T10
 jal zero, L3
 jal zero, L3
-L3#TODO IN NEXT PHASES: EPILOGUE
-
-#####################
-
-ld zero, 0(sp)
+L3
 ld ra, -8(sp)
 ld sp, -16(sp)
 ld gp, -24(sp)
