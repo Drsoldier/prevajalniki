@@ -8,12 +8,18 @@ import compiler.phase.asmgen.ASM.*;
 import java.util.*;
 
 import compiler.phase.livean.*;
+import compiler.phase.memory.MEM;
+import compiler.phase.memory.SizeEvaluator;
+import compiler.phase.seman.TYP;
+import compiler.phase.imcgen.*;
 
 public class RegAll extends Phase{
 
     public final HashMap<Register, Integer> tempToReg = new HashMap<Register, Integer>();
     public static Map<ASM.Register, Integer> firstUse = new HashMap<>();
     public static Map<ASM.Register, Integer> lastUse = new HashMap<>();
+    public static int highestRegister = 0;
+
     public Vector<ASM.AsmChunk> vseFunkcije; 
     int numberOfRegisters;
     public RegAll(){
@@ -22,7 +28,7 @@ public class RegAll extends Phase{
         allRegisters = new Register[32];
         for(int i=4; i<32; i++){
             StringBuilder sb = new StringBuilder("x");
-            if(i == 7 || i == 8){
+            if(i == 8){
                 continue;
             }
             sb.append(Integer.toString(i));
@@ -32,9 +38,14 @@ public class RegAll extends Phase{
         allRegisters[1] = ASM.retaddr;
         allRegisters[2] = ASM.sp;
         allRegisters[3] = ASM.gp;
-        allRegisters[7] = ASM.t2;
         allRegisters[8] = ASM.fp;
+        allRegisters[10] = ASM.a0;
 
+        tempToReg.put(ASM.zero, 0);
+        tempToReg.put(ASM.retaddr, 1);
+        tempToReg.put(ASM.sp, 2);
+        tempToReg.put(ASM.gp, 3);
+        tempToReg.put(ASM.a0, 10);
     }
 
     public RegAll(int x){
@@ -45,7 +56,7 @@ public class RegAll extends Phase{
         allRegisters = new Register[32];
         for(int i=4; i<32; i++){
             StringBuilder sb = new StringBuilder("x");
-            if(i == 7 || i == 8){
+            if(i == 8){
                 continue;
             }
             sb.append(Integer.toString(i));
@@ -55,8 +66,13 @@ public class RegAll extends Phase{
         allRegisters[1] = ASM.retaddr;
         allRegisters[2] = ASM.sp;
         allRegisters[3] = ASM.gp;
-        allRegisters[7] = ASM.t2;
         allRegisters[8] = ASM.fp;
+        allRegisters[10] = ASM.a0;
+        tempToReg.put(ASM.zero, 0);
+        tempToReg.put(ASM.retaddr, 1);
+        tempToReg.put(ASM.sp, 2);
+        tempToReg.put(ASM.gp, 3);
+        tempToReg.put(ASM.a0, 10);
     }
     
     public Register[] allRegisters;
@@ -64,7 +80,9 @@ public class RegAll extends Phase{
     public Graph build(ASM.AsmChunk koda){
         Graph graph = new Graph();
         LiveAn la = new LiveAn(null);
-        var x = la.livean(koda);
+        ASM.AsmChunk x = la.livean(koda);
+        System.out.println("This is for debug purposes");
+        System.out.println(x.toString());
         for(var tmp : x.lines){
             // if the line is an instruction, we add it to the graph 
             if(tmp instanceof ASM.Instr instruction){
@@ -85,25 +103,17 @@ public class RegAll extends Phase{
                 }
             }
         }
-        graph.removeNode(ASM.gp);
-        graph.removeNode(ASM.sp);
         graph.removeNode(ASM.zero);
         graph.removeNode(ASM.retaddr);
+        graph.removeNode(ASM.sp);
+        graph.removeNode(ASM.gp);
+        graph.removeNode(ASM.fp);
+        graph.removeNode(ASM.a0);
 
         la = null;
         return graph;
     }
 
-    public int getLengthOfRegister(Vector<? extends ASM.Line> lines, ASM.Register reg, int currIndex){
-        int n = 0;
-        for(Line line = lines.get(currIndex); currIndex < lines.size(); currIndex++){
-            if(line instanceof ASM.Instr instr){
-
-            }
-            n++;
-        }
-        return 0;
-    }
 
     public HashMap<Register, Integer> getLifespanLength(AsmChunk function){
         HashMap<Register, Integer> neki = new HashMap<>();
@@ -122,7 +132,7 @@ public class RegAll extends Phase{
     }
 
     // is the graph able to be simplified
-    public boolean simple(Graph ig, Stack<Node> stack){
+    public boolean simplify(Graph ig, Stack<Node> stack){
         for (Node node : ig.nodes()){
             if(node.degree() < numberOfRegisters){
                 ig.removeNode(node.temporary);
@@ -144,76 +154,131 @@ public class RegAll extends Phase{
             }
         }
 
-        if(selectedNode == null){
-            return selectedNode;
+        if(selectedNode != null){
+            selectedNode.potentialSpill = true;
+            graph.removeNode(selectedNode.temporary);
+            stack.push(selectedNode);
         }
 
-        selectedNode.potentialSpill = true;
-        graph.removeNode(selectedNode.temporary);
-        stack.push(selectedNode);
-        return null;
+        
+        return selectedNode;
     }
 
     public Vector<Register> select(Graph reconstructedGraph, HashMap<Node, HashSet<Node>> edges, Stack<Node> stack){
         Vector<Register> spills = new Vector<>();
 
-        boolean coloringFound = true;
-
-        while(!stack.isEmpty()){
-            Node currNode = stack.pop();
+        while (!stack.isEmpty()) {
+            Node currentNode = stack.pop();
 
             HashSet<Node> neighbours = reconstructedGraph.nodes();
-            neighbours.retainAll(edges.get(currNode));
+            neighbours.retainAll(edges.get(currentNode));
 
-            boolean isPossibleColor[] = new boolean[numberOfRegisters];
-
-            for(int i=0; i<numberOfRegisters; i++){
-                isPossibleColor[i] = true;
+            boolean isPossibleColour[] = new boolean[Math.min(numberOfRegisters + 5, 32)];
+            for (int i = 0; i < isPossibleColour.length; i++) {
+                switch (i) {
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 8:  // frame pointer,   s0
+                case 10: // return value,    a0
+                case 17: // syscal register, a7
+                    break;
+                default:
+                    isPossibleColour[i] = true;
+                    break;
+                }
             }
-            
-            reconstructedGraph.addNode(currNode);
+
+            reconstructedGraph.addNode(currentNode);
             for (Node neighbour : neighbours) {
-				reconstructedGraph.addEdge(currNode, neighbour);
-				if (neighbour.color >= 0)
-					isPossibleColor[neighbour.color] = false;
-			}
+                reconstructedGraph.addEdge(currentNode, neighbour);
+                if (neighbour.color >= 0) {
+                    isPossibleColour[neighbour.color] = false;
+                }
+            }
 
-			for (int i = 0; i < isPossibleColor.length; i++) {
-				if (isPossibleColor[i]) {
-					currNode.color = i;
-					break;
-				}
-			}
+            for (int i = 0; i < isPossibleColour.length; i++) {
+                if (isPossibleColour[i]) {
+                    currentNode.color = i;
+                    break;
+                }
+            }
 
-			if (currNode.color < 0) {
-				// No color has been found
-				currNode.actualSpill = true;
-				coloringFound = false;
-				spills.add(currNode.temporary);
-			}
-
-
+            if (currentNode.color < 0) {
+                currentNode.actualSpill = true;
+                spills.add(currentNode.temporary);
+            }
         }
+        System.out.println("[");
+        for(var x : spills){
+            System.out.print(x.toString()+", ");
+        }
+        System.out.println("]");
+
         return spills;
     }
 
-    public void modify(AsmChunk code, Vector<Register> spills){
-        System.out.println("spills:"+spills.toString());
-        for (Register spill : spills){
-            Vector<ASM.Line> newCode = new Vector<>();
 
-            long pointerSize = 8l;
-            int overflows = (int)(code.frameOfCode.locsSize / 8l);
+    //TODO
+    private ASM.Instr modifyInstr(ASM.Instr instr, Register newRegister, int pos){
+        ASM.Instr x = instr;
+        return x;
+    }
+
+    //TODO
+    public void modify(AsmChunk code, Vector<Register> spills){
+        for(Register spill : spills){
+            Vector<ASM.Line> modifiedInstr = new Vector<>();
+            long ptrSize = new TYP.PtrType(TYP.VoidType.type).accept(new SizeEvaluator(), null);
+            int overflows = (int) (code.frameOfCode.locsSize / ptrSize);
+            code.tmpSize += ptrSize;
+            long offset = code.frameOfCode.locsSize + 2*ptrSize + overflows * ptrSize + ptrSize;
+            for(ASM.Line line : code.lines){
+                if(!(line instanceof ASM.Instr))
+                    continue;
+                ASM.Instr instr = (ASM.Instr)line;
+                boolean usesSpilledTemp = instr.use.contains(spill);
+                boolean definesSpilledTemp = instr.def.contains(spill);
+
+                //TODO
+                if(usesSpilledTemp || definesSpilledTemp){
+                    if(usesSpilledTemp){
+                        Register resTmp = new ASM.Register(new IMC.TEMP(new MEM.Temp()));
+                        Vector<Register> definesLoad = new Vector<>();
+                        Vector<Register> uses = new Vector<>();
+                        definesLoad.add(resTmp);
+                        var load = new ASM.RegisterAndOffset("ld", resTmp, ASM.fp, offset);
+                        load.def=definesLoad;
+                        modifiedInstr.add(load);
+
+
+                        // Replace the register used with the temporary register
+                        for(Register usedTmp : instr.use){
+                            if(usedTmp == spill){
+                                uses.add(resTmp);
+                            }else{
+                                uses.add(usedTmp);
+                            }
+                        }
+                    }
+                }else{
+                    modifiedInstr.add(line);
+                }
+
+                code.lines = new Vector<>(modifiedInstr);
+            }
         }
     }
 
 
     public void allocate(){
-
         for (AsmChunk code : vseFunkcije){
-            boolean coloringFound;
+            boolean coloringFound = false;
             int i = 0;
-            for(ASM.Line x : code.lines){
+            Graph reconstructedGraph = null;
+            /*for(ASM.Line x : code.lines){
                 if(x instanceof ASM.Instr z){
                     for(ASM.Register regInOut : z.out){
                         firstUse.putIfAbsent(regInOut, i);
@@ -221,9 +286,9 @@ public class RegAll extends Phase{
                     }
                 }
                 i++;
-            }
+            }*/
 
-			Graph reconstructedGraph = null;
+			/*
 			do {
 				
 				// STEP 1: BUILD INTERFERENCE GRAPH
@@ -235,7 +300,7 @@ public class RegAll extends Phase{
 					// STEP 2: PERFORM ONE STEP OF SIMPLIFICATION
 					boolean hasChanged;
 					do {
-						hasChanged = this.simple(interferenceGraph, stack);
+						hasChanged = this.simplify(interferenceGraph, stack);
 					} while (hasChanged);
 
 					// STEP 3: SPILL
@@ -257,15 +322,44 @@ public class RegAll extends Phase{
 
                 //throw new Report.Error("Could not allocate necessary registers with original code");
 
-			} while (!coloringFound);
+			} while (!coloringFound);*/
+
+
+            while(!coloringFound){
+                Graph interferenceGraph = build(code);
+                HashMap<Node, HashSet<Node>> edges = interferenceGraph.edges();
+                Stack<Node> stack = new Stack<>();
+                do {
+                    while (simplify(interferenceGraph, stack)) {}
+                    this.spill(interferenceGraph, stack);
+                } while (!interferenceGraph.isEmpty());
+
+                reconstructedGraph = new Graph();
+                Vector<Register> spills = this.select(reconstructedGraph, edges, stack);
+                //coloringFound = spills.size() == 0;
+                if(coloringFound || !coloringFound)
+                    break;
+                //this.modify(code, spills);
+            }
+            this.tempToReg.put(ASM.fp, 8);
+            for (Node node : reconstructedGraph.nodes()) {
+                this.tempToReg.putIfAbsent(node.temporary, node.color);
+            }
+            var vals = this.tempToReg.values();
+            for(int reg : vals){
+                if(reg > highestRegister){
+                    highestRegister = reg;
+                }
+            }
 
 			// After coloring has been found, actually use register numbers to
 			// assign registers. The frame pointer was not present in the graph
 			// and is precolored to value 253.
 			//this.tempToReg.put(new Register(code.frameOfCode.FP), 253);
-			for (Node node : reconstructedGraph.nodes()) {
-                System.out.println(node.toString());
-				this.tempToReg.put(node.temporary, node.color);
+			System.out.println("FUCK");
+            for (Node node : reconstructedGraph.nodes()) {
+                System.out.println(node.toString() + " " + node.color);
+				this.tempToReg.putIfAbsent(node.temporary, node.color);
 			}
             for(ASM.Line x : code.lines){
                 if(x instanceof JumpAndLink jl){
@@ -280,10 +374,12 @@ public class RegAll extends Phase{
                 }
                 if(x instanceof BreakIf bi){
                     bi.rs1 = allRegisters[this.tempToReg.get(bi.rs1)];
+                    System.out.println(bi.rs2);
                     bi.rs2 = allRegisters[this.tempToReg.get(bi.rs2)];
                 }
                 if(x instanceof DoubleRegInstr dri){
                     dri.rs1 = allRegisters[this.tempToReg.get(dri.rs1)];
+                    System.out.println(dri.rs2);
                     dri.rs2 = allRegisters[this.tempToReg.get(dri.rs2)]; 
                     dri.rd = allRegisters[this.tempToReg.get(dri.rd)];
                 }
@@ -292,6 +388,7 @@ public class RegAll extends Phase{
                 }
 
                 if(x instanceof MathOperationWithReg mowr){
+                    System.out.println(mowr.rs2);
                     mowr.rs1 = allRegisters[this.tempToReg.get(mowr.rs1)];
                     mowr.rs2 = allRegisters[this.tempToReg.get(mowr.rs2)];
                     mowr.rd = allRegisters[this.tempToReg.get(mowr.rd)];

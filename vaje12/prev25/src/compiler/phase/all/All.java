@@ -5,6 +5,8 @@ import java.io.*;
 import compiler.phase.Phase;
 import compiler.phase.asmgen.ASM;
 import compiler.phase.asmgen.ASM.AsmChunk;
+import compiler.phase.asmgen.ASM.LoadAddress;
+import compiler.phase.asmgen.ASM.MathOperationWithValue;
 import compiler.phase.asmgen.ASM.RegisterAndOffset;
 import compiler.phase.regall.*;
 import compiler.phase.asmgen.*;
@@ -34,7 +36,7 @@ public class All extends Phase{
         x.add(new ASM.Comment("Prologue"));
         x.add(x2.lines.get(0));
         for(int i = 1; i<32; i+=1){
-            x.add(new RegisterAndOffset("sd", allRegisters[i], ASM.sp, -i*8-x2.frameOfCode.locsSize));
+            x.add(new RegisterAndOffset("sd", allRegisters[i], ASM.sp, -i*8-x2.tmpSize));
             /*x.add(
                 new RegisterAndOffset
                 ("addi", 
@@ -51,7 +53,7 @@ public class All extends Phase{
         //first do the prolog
         Vector<ASM.Line> x = new Vector<ASM.Line>();
         x = saveRegisters(trenutnaFunkcija);
-        System.out.println(x.toString());
+        //System.out.println(x.toString());
         for(int i=1; i<trenutnaFunkcija.lines.size(); i++){
             x.add(trenutnaFunkcija.lines.get(i));
         }
@@ -59,29 +61,36 @@ public class All extends Phase{
         //then do the epilouge
         if(trenutnaFunkcija.frameOfCode != null){
             if(trenutnaFunkcija.frameOfCode.label.name.equals("_main")){
-                z2.addLine(new ASM.NameOfFrame("main" + " jal x0," + " main"));
+                z2.addLine(new ASM.NameOfFrame("\tret\n\n"));
                 z2.addLine(new ASM.Comment("-----End of the main function-----"));
                 return z2;
             }
         }
+        z2.addLine(new ASM.MathOperationWithReg("add", ASM.a0, ASM.zero, trenutnaFunkcija.retReg));
         for(int i=1; i<32; i++){
-            z2.addLine(new RegisterAndOffset("ld", allRegisters[i], ASM.sp, -i*8-trenutnaFunkcija.frameOfCode.locsSize));
+            z2.addLine(new RegisterAndOffset("ld", allRegisters[i], ASM.sp, -i*8-trenutnaFunkcija.tmpSize));
         }
-        z2.addLine(new ASM.NameOfFrame("ret\n\n"));
+        z2.addLine(new ASM.NameOfFrame("\tret\n\n"));
         z2.addLine(new ASM.Comment("-----End of function-----"));
         return z2;
     }
 
-    public void printTheThing() throws Exception{
-        FileWriter fw = new FileWriter(f);
-        fw.append(data.toString());
-        System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAA");
-        for(AsmChunk x : koda){
-            var o = updateTheThings(x);
-            fw.append(o.toString());
+    public void printTheThing(){
+        try{
+            FileWriter fw = new FileWriter(f);
+            fw.append(data.toString());
+            //System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAA");
+            for(AsmChunk x : koda){
+                var o = updateTheThings(x);
+                fw.append(o.toString());
+            }
+            System.out.println("Zakaj to ne dela");
+            fw.close();
+        }catch(Exception e){
+            
         }
-        System.out.println("Zakaj to ne dela");
-        fw.close();
+        
+        
     }
 
 }

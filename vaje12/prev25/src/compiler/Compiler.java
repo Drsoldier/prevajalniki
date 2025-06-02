@@ -278,13 +278,13 @@ public class Compiler {
 				}
 				if(cmdLineOptValues.get("--target-phase").equals("regall"))
 					break;
-					
-				try(All all = new All(cmdLineOptValues.get("--src-file-name"), koda, data, x2)){
+					All all = new All(cmdLineOptValues.get("--src-file-name"), koda, data, x2);
 					all.printTheThing();
+				/*try(){
 					System.out.println("printed out the thing");
 				}catch(Exception e){
 					System.out.println(e	);
-				}
+				}*/
 				if(cmdLineOptValues.get("--target-phase").equals("all"))
 					break;
 				// Do not loop... ever.

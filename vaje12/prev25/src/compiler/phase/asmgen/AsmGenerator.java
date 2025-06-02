@@ -362,7 +362,7 @@ public class AsmGenerator implements IMC.Visitor<Object, AsmChunk> {
     @Override
     public String visit(IMC.LABEL label, AsmChunk arg) {
         MEM.Label lbl = label.label;
-        arg.addLine(new ASM.Label(label));
+        arg.addLine(new ASM.LabelLine(label));
         return lbl.name + "\t#this is in a new line, this should be in line with the documentation for labels in RISC-V  \n";
     }
 
@@ -626,12 +626,25 @@ public class AsmGenerator implements IMC.Visitor<Object, AsmChunk> {
 
             String dst2 = dst.temp.toString();
             String src2 = src.temp.toString();
+            if(arg.frameOfCode!= null){
+                Report.info("FUCKFUCKKKKKKK " + new Register(dst)+ " "+ new Register(arg.frameOfCode.RV));
+                Register x2 = new Register(new IMC.TEMP(arg.frameOfCode.RV));
+                Register y2 = new Register(dst);
+                arg.retReg = new Register(arg.frameOfCode.RV);
+                if(x2.toString().equals(y2.toString())){
+                    arg.addLine(new MathOperationWithReg("add", ASM.a0, ASM.zero, new Register(src)));
+                    return String.format("add %s, %s, %s", ASM.a0, ASM.zero, new Register(src));
+
+                }
+                //throw new Report.Error("FUCKS SAKE");
+            }
             arg.addLine(new MathOperationWithReg(
                 "add",
                 new Register(dst),
                 ASM.zero,
                 new Register(src)
             ));
+
             return String.format("add %s, %s, %s", dst2, "x0", src2) + "\n";
         }
         

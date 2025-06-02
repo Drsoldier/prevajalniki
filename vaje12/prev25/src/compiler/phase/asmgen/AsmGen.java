@@ -87,11 +87,12 @@ public class AsmGen extends Phase{
 
         System.out.println(".text");
         for (LIN.CodeChunk cc : codeChunk) {
-            ASM.AsmChunk asmChunk = new ASM.AsmChunk();
-            asmChunk.frameOfCode = cc.frame;
+            ASM.AsmChunk asmChunk = new ASM.AsmChunk(cc.frame);
+            //asmChunk.frameOfCode = cc.frame;
             sb.append("######" + cc.frame.label.name + "#####\n");
-            sb.append(cc.frame.label.name+"#TODO IN NEXT PHASES: PROLOGUE\n");
-            asmChunk.addLine(new ASM.NameOfFrame(cc.frame.label.name));
+            sb.append(cc.frame.label.name+": #TODO IN NEXT PHASES: PROLOGUE\n");
+
+            asmChunk.addLine(new ASM.NameOfFrame(cc.frame.label.name+":"));
             asmChunk.frameOfCode = cc.frame;
             asmChunk.addLine(new ASM.Comment("######" + cc.frame.label.name + "#####\n"));
             //asmChunk.addLine(new ASM.Label(cc.frame.label.name+"#TODO IN NEXT PHASES: PROLOGUE\n"));
@@ -103,7 +104,7 @@ public class AsmGen extends Phase{
                 sb.append(x.toString() + "\n");
             }
             codeChunkToAsmChunk.put(cc, asmChunk);
-            asmChunk.addLine(new ASM.Label(cc.exitLabel.name+""));
+            asmChunk.addLine(new ASM.LabelLine(cc.exitLabel.name));
             //asmChunk.addLine(new ASM.Comment("####################\n"));
             addAsmChunk(asmChunk);
             

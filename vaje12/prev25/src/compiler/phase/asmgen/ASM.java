@@ -24,15 +24,23 @@ public class ASM {
 	public static final Register gp = new Register("gp"); // x3
 	public static final Register t2 = new Register("t2"); // x7
 	public static final Register fp = new Register("fp"); // x8 s0
+	public static final Register a0 = new Register("a0"); // x10
+
 
 	public static class AsmChunk {
 		public Vector<Line> lines = new Vector<>();
 		public MEM.Frame frameOfCode;
+		public Register retReg;
+		public long tmpSize = 0L;
 		public void addLine(Line line) {
 			lines.add(line);
 		}
 		public AsmChunk(){
 
+		}
+		public AsmChunk(MEM.Frame frame){
+			frameOfCode = frame;
+			tmpSize = frame.locsSize;
 		}
 		public AsmChunk(Vector<? extends Line> x){
 			lines.addAll(x);
@@ -49,7 +57,20 @@ public class ASM {
 		}
 	}
 
-	public static class Register{
+	public static class Register implements Comparable{
+
+		@Override
+		public int compareTo(Object rg){
+			return name.compareTo(((Register)rg).name);
+		}
+
+		@Override
+		public boolean equals(Object arg){
+			if(this.compareTo(arg) == 0)
+				return true;
+			return false;
+		}
+
 		String name;
 		IMC.TEMP connectedTemp; 
 		public Register(String name) {
@@ -91,6 +112,17 @@ public class ASM {
 			return x;
 		}
     }
+	public static class LabelLine extends Label{
+		public LabelLine(IMC.LABEL lbl) {
+            super(lbl);
+        }
+		public LabelLine(String y){
+			super(y);
+		}
+		public String toString() {
+            return super.toString() + ":";
+		}
+	}
 
     public abstract static class Instr extends Line {
         public String opcode;
@@ -109,7 +141,7 @@ public class ASM {
 		public String toString(){
 			if(in != null && out != null){
 
-				//return String.format("\nIN:%s\nOUT:%s", in.toString(), out.toString());
+				//return String.format("\t\nIN:%s\nOUT:%s", in.toString(), out.toString());
 			}
 			return "";
 		}
@@ -126,7 +158,7 @@ public class ASM {
 		}
 
 		public String toString() {
-			return String.format("%s %s, %s", opcode, rd, label) + super.toString();
+			return String.format("\t%s %s, %s", opcode, rd, label) + super.toString();
 		}
     }
 
@@ -189,7 +221,7 @@ public class ASM {
         }
 		
 		public String toString() {
-            return String.format("%s %s, %s", opcode, rd, rs1) + super.toString();
+            return String.format("\t%s %s, %s", opcode, rd, rs1) + super.toString();
         }
 	}
 
@@ -204,7 +236,7 @@ public class ASM {
 			this.def.add(rd);
 		}
 		public String toString(){
-			return String.format("%s %s, %s",opcode, rd, rs1) + super.toString();
+			return String.format("\t%s %s, %s",opcode, rd, rs1) + super.toString();
 		}
 	}
 
@@ -223,7 +255,7 @@ public class ASM {
 			super.use.add(rs2);
 		}
 		public String toString() {
-			return String.format("%s %s, %s", opcode, rs1, rs2) + super.toString();
+			return String.format("\t%s %s, %s", opcode, rs1, rs2) + super.toString();
 		}
 	}
 
@@ -243,7 +275,7 @@ public class ASM {
 		}
 
 		public String toString() {
-			return String.format("%s %s, %s, %s", opcode, rd, rs1, rs2);
+			return String.format("\t%s %s, %s, %s", opcode, rd, rs1, rs2);
 		}
 
 		
@@ -260,7 +292,7 @@ public class ASM {
 		}
 
 		public String toString() {
-			return String.format("%s %s, %s", opcode, rd.toString(), value) + super.toString();
+			return String.format("\t%s %s, %s", opcode, rd.toString(), value) + super.toString();
 		}
 		
 	}
@@ -280,7 +312,7 @@ public class ASM {
 			this.def.add(rd);
 		}
 		public String toString() {
-			return String.format("%s %s, %s, %s", opcode, rd.toString(), rs1.toString(), rs2.toString()) + super.toString();
+			return String.format("\t%s %s, %s, %s", opcode, rd.toString(), rs1.toString(), rs2.toString()) + super.toString();
 		}
 	}
 	public static class MathOperationWithValue extends Instr{
@@ -296,7 +328,7 @@ public class ASM {
 			this.def.add(rd);
 		}
 		public String toString() {
-			return String.format("%s %s, %s, %s", opcode, rd.toString(), rs1.toString(), value) + super.toString();
+			return String.format("\t%s %s, %s, %s", opcode, rd.toString(), rs1.toString(), value) + super.toString();
 		}
 	}
 	
@@ -324,7 +356,7 @@ public class ASM {
 			this.def.add(rd);
 		}
 		public String toString() {
-			return String.format("%s %s, %s(%s)", opcode, rd.toString(), offset, rs1.toString()) + super.toString();
+			return String.format("\t%s %s, %s(%s)", opcode, rd.toString(), offset, rs1.toString()) + super.toString();
 		}
 	}
 
@@ -350,8 +382,8 @@ public class ASM {
 		}
 		public String toString() {
 			if(b2 == null)
-				return String.format("%s %s, %s(%s)", opcode, rd.toString(), b.toString(), rs1.toString()) + super.toString();
-			return String.format("%s %s, %s(%s)", opcode, rd.toString(), b, rs1.toString()) + super.toString();
+				return String.format("\t%s %s, %s(%s)", opcode, rd.toString(), b.toString(), rs1.toString()) + super.toString();
+			return String.format("\t%s %s, %s(%s)", opcode, rd.toString(), b, rs1.toString()) + super.toString();
 		}
 	}
 
