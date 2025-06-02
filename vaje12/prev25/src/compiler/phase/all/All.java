@@ -59,7 +59,7 @@ public class All extends Phase{
         //then do the epilouge
         if(trenutnaFunkcija.frameOfCode != null){
             if(trenutnaFunkcija.frameOfCode.label.name.equals("_main")){
-                z2.addLine(new ASM.NameOfFrame(trenutnaFunkcija.frameOfCode.label + " jal x0," + trenutnaFunkcija.frameOfCode.label));
+                z2.addLine(new ASM.NameOfFrame("main" + " jal x0," + " main"));
                 z2.addLine(new ASM.Comment("-----End of the main function-----"));
                 return z2;
             }

@@ -264,9 +264,52 @@ public class RegAll extends Phase{
 			// and is precolored to value 253.
 			//this.tempToReg.put(new Register(code.frameOfCode.FP), 253);
 			for (Node node : reconstructedGraph.nodes()) {
+                System.out.println(node.toString());
 				this.tempToReg.put(node.temporary, node.color);
 			}
+            for(ASM.Line x : code.lines){
+                if(x instanceof JumpAndLink jl){
+                    jl.rd = allRegisters[this.tempToReg.get(jl.rd)];
+                }
+                if(x instanceof SingleRegInstr sri){
+                    sri.rs1 = allRegisters[this.tempToReg.get(sri.rs1)];
+                    sri.rd = allRegisters[this.tempToReg.get(sri.rd)];
+                }
+                if(x instanceof LoadAddress la){
+                    la.rd = allRegisters[this.tempToReg.get(la.rd)];
+                }
+                if(x instanceof BreakIf bi){
+                    bi.rs1 = allRegisters[this.tempToReg.get(bi.rs1)];
+                    bi.rs2 = allRegisters[this.tempToReg.get(bi.rs2)];
+                }
+                if(x instanceof DoubleRegInstr dri){
+                    dri.rs1 = allRegisters[this.tempToReg.get(dri.rs1)];
+                    dri.rs2 = allRegisters[this.tempToReg.get(dri.rs2)]; 
+                    dri.rd = allRegisters[this.tempToReg.get(dri.rd)];
+                }
+                if(x instanceof RegisterAndValue rav){
+                    rav.rd = allRegisters[this.tempToReg.get(rav.rd)];
+                }
 
+                if(x instanceof MathOperationWithReg mowr){
+                    mowr.rs1 = allRegisters[this.tempToReg.get(mowr.rs1)];
+                    mowr.rs2 = allRegisters[this.tempToReg.get(mowr.rs2)];
+                    mowr.rd = allRegisters[this.tempToReg.get(mowr.rd)];
+                }
+                if(x instanceof MathOperationWithValue mowv){
+                    mowv.rs1 = allRegisters[this.tempToReg.get(mowv.rs1)];
+                    mowv.rd = allRegisters[this.tempToReg.get(mowv.rd)];
+                }
+                if(x instanceof RegisterAndOffset rao){
+                    rao.rs1 = allRegisters[this.tempToReg.get(rao.rs1)]; 
+                    rao.rd = allRegisters[this.tempToReg.get(rao.rd)];
+                }
+                if(x instanceof LoadData ld){
+                    ld.rs1 = allRegisters[this.tempToReg.get(ld.rs1)];
+                    ld.rd = allRegisters[this.tempToReg.get(ld.rd)];
+                }
+            }
+            System.out.println(reconstructedGraph.toString());
 		}
     }
 

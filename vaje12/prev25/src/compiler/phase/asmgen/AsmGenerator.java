@@ -637,67 +637,18 @@ public class AsmGenerator implements IMC.Visitor<Object, AsmChunk> {
         
         // Done
         if(move.dst instanceof IMC.TEMP dst && move.src instanceof IMC.CONST x) {
-            
-            String dst2 = dst.temp.toString();
 
-            //Save the temp register value used for the constant
+            //This is a pseudo command
             {
-                arg.addLine(new Comment("------------Saving t2 register------------"));
-                arg.addLine(new RegisterAndOffset(
-                    "sd", 
-                    ASM.t2, 
-                    ASM.sp, 
-                    -8L
-                ));
-            }
 
-            //Load the constant value into the temp register and save it to the stack
-            {
-                Long upper;
-                Long lower;
-                if(x.value == 0){
-                    upper = 0L;
-                    lower = 0L;
-                }else{
-                    
-                    upper = x.value >> 32;
-                    lower =  x.value & 0xFFFFFFFF;
-                    //Report.info(String.format("upper: %s, lower:%s",Long.toString(upper), Long.toString(lower)));
-                    //Report.info(String.format("upper:%s, lower:%s", Long.toBinaryString(upper), Long.toBinaryString(lower)));
-                }
                 arg.addLine(new RegisterAndValue(
-                    "lui", 
-                    ASM.t2, 
-                    upper
-                ));
-
-                arg.addLine(new MathOperationWithValue(
-                    "addi",
-                    ASM.t2,
-                    ASM.zero,
-                    lower
-                ));
-
-
-                arg.addLine(new MathOperationWithReg(
-                    "add", 
+                    "li", 
                     new Register(dst),
-                    ASM.t2,
-                    ASM.zero
+                    x.value
                 ));
             }
 
-            //Load the old register value from the stack
-            {
-                arg.addLine(new RegisterAndOffset(
-                    "ld", 
-                    ASM.t2, 
-                    ASM.sp, 
-                    -8L
-                ));
-                arg.addLine(new Comment("------------Restored t2 register------------"));
-
-            }
+            
             return String.format("addi %s, %s, %s", dst, "x0",  x.value) + "\n";
         }
         
@@ -709,8 +660,27 @@ public class AsmGenerator implements IMC.Visitor<Object, AsmChunk> {
             if(y.addr instanceof IMC.TEMP b){
                 src = b.temp.toString();
             }else if(y.addr instanceof IMC.NAME x2){
+                MEM.Label lbl = 
+                    x2.label;
+                src =
+                    lbl.name;    
+            }
+            if(y.addr instanceof IMC.TEMP b){
+                arg.addLine(new RegisterAndOffset(
+                    "ld",
+                    new Register(x),
+                    new Register(b),
+                    0L)
+                );
+            }else if(y.addr instanceof IMC.NAME x2){
                 MEM.Label lbl = x2.label;
-                src = lbl.name;    
+                src = lbl.name;
+                arg.addLine(new LoadData(
+                "ld",
+                    new Register(x),
+                    ASM.zero,
+                    new ASM.Label(new IMC.LABEL(x2.label))
+                ));
             }
             return String.format("lb %s, 0(%s)", dst, src) + "\n";
     

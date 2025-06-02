@@ -14,8 +14,7 @@ import compiler.phase.memory.MEM;
 
 public class ASM {
 
-	public static abstract class Line {
-    }
+	public static abstract class Line {}
 
 	public static HashMap<String, Register> registers = new HashMap<>();
 
@@ -115,7 +114,6 @@ public class ASM {
 			return "";
 		}
     }
-
     public static class JumpAndLink extends Instr{
 		public Label label;
 		public Register rd;
@@ -176,9 +174,6 @@ public class ASM {
 		}
 	}
 
-
-
-
 	public static class SingleRegInstr extends Instr{
 		public Register rs1;
 		public Register rd;
@@ -197,7 +192,6 @@ public class ASM {
             return String.format("%s %s, %s", opcode, rd, rs1) + super.toString();
         }
 	}
-
 
 	public static class LoadAddress extends Instr{
 		public ASM.Label rs1;
@@ -232,22 +226,6 @@ public class ASM {
 			return String.format("%s %s, %s", opcode, rs1, rs2) + super.toString();
 		}
 	}
-
-	/*public static class RegWithLabel extends Instr{
-		public Register rs1;
-		public Label label;
-		public Register rd;
-		public RegWithLabel(String opcode, Register rd, Register rs1, Label label) {
-			super(opcode);
-			this.rd = rd;
-			this.rs1 = rs1;
-			this.label = label;
-		}
-		public String toString() {
-			return String.format("%s %s, %s", rs1, label);
-		}
-	}*/
-
 
 	public static class DoubleRegInstr extends Instr{
 		public Register rs1;
