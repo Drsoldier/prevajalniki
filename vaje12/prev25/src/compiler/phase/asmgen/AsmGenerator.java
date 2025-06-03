@@ -44,6 +44,28 @@ public class AsmGenerator implements IMC.Visitor<Object, AsmChunk> {
         String labelFalse = cjump.negAddr.toString();            // false branch label
         String instr;
 
+        if(binop.fstExpr instanceof IMC.CONST z){
+            IMC.TEMP tmp1 = new IMC.TEMP(new MEM.Temp());
+            lhs = tmp1.temp.toString();
+            Report.warning(lhs);
+            arg.addLine(new RegisterAndValue(
+                    "li", 
+                    new Register(tmp1.temp),
+                    z.value
+                    ));
+        }
+        if(binop.sndExpr instanceof IMC.CONST z2){
+            IMC.TEMP tmp1 = new IMC.TEMP(new MEM.Temp());
+            rhs = tmp1.temp.toString();
+            Report.warning(rhs);
+
+            arg.addLine(new RegisterAndValue(
+                "li", 
+                new Register(tmp1.temp),
+                z2.value
+            ));
+        }
+
         switch (binop.oper) {
         case AND : 
             IMC.TEMP x = new IMC.TEMP(new MEM.Temp());
@@ -165,9 +187,8 @@ public class AsmGenerator implements IMC.Visitor<Object, AsmChunk> {
 
         // Emit false jump after the conditional branch
         arg.addLine(
-            new BreakIf
+            new ASM.JumpAndLink
             ("jal", 
-            ASM.zero,
             ASM.zero,
             new Label(fLbl)
             )
@@ -196,7 +217,7 @@ public class AsmGenerator implements IMC.Visitor<Object, AsmChunk> {
                 arg.addLine(new Comment("fixing sp"));
                 for(int i=0; i<x.args.size(); i++) {
                     arg.addLine(
-                        new RegisterAndOffset
+                        new MathOperationWithValue
                         ("addi", 
                         ASM.sp,
                         ASM.zero,
@@ -270,15 +291,7 @@ public class AsmGenerator implements IMC.Visitor<Object, AsmChunk> {
                     sb.append("sd " + x.temp.toString() + ", 0(sp)\n");   
                 }
             }else if(expr instanceof IMC.CONST x) {
-                Long upper;
-                Long lower;
-                if(x.value == 0){
-                    upper = 0L;
-                    lower = 0L;
-                }else{
-                    upper = x.value >> 32;
-                    lower =  x.value & (long)0xFFFFFFFF;
-                }
+                
                 //If arguemnt is IMC.CONST, push it to the stack
 
                 //Save the temp register value used for the constant
@@ -295,20 +308,10 @@ public class AsmGenerator implements IMC.Visitor<Object, AsmChunk> {
                 //Load the constant value into the temp register and save it to the stack
                 {
                     arg.addLine(new RegisterAndValue(
-                        "lui", 
-                        ASM.t2, 
-                        upper
+                    "li", 
+                    ASM.t2,
+                    x.value
                     ));
-                    sb.append("lui t2, " + upper + "\n");
-
-
-                    arg.addLine(new MathOperationWithValue(
-                        "addi",
-                        ASM.t2,
-                        ASM.zero,
-                        lower
-                    ));
-                    sb.append("addi t2, x0, " + lower + "\n");
 
 
                     arg.addLine(new RegisterAndOffset(
@@ -759,7 +762,7 @@ public class AsmGenerator implements IMC.Visitor<Object, AsmChunk> {
                 arg.addLine(new ASM.Comment("args size is "+ y.args.size()));
                 for(int i=0; i<y.args.size(); i++) {
                     arg.addLine(
-                        new RegisterAndOffset
+                        new MathOperationWithValue
                         ("addi", 
                         ASM.sp,
                         ASM.zero,

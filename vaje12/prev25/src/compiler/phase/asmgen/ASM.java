@@ -23,7 +23,7 @@ public class ASM {
 	public static final Register sp = new Register("sp"); // x2
 	public static final Register gp = new Register("gp"); // x3
 	public static final Register t2 = new Register("t2"); // x7
-	public static final Register fp = new Register("fp"); // x8 s0
+	public static final Register fp = new Register("sp"); // x8 fp
 	public static final Register a0 = new Register("a0"); // x10
 
 
@@ -141,7 +141,7 @@ public class ASM {
 		public String toString(){
 			if(in != null && out != null){
 
-				//return String.format("\t\nIN:%s\nOUT:%s", in.toString(), out.toString());
+				return String.format("\t\n\tIN:%s\n\tOUT:%s\n\tUSE:%s\n\tDEF:%s\n", in.toString(), out.toString(), use.toString(), def.toString());
 			}
 			return "";
 		}
@@ -255,7 +255,7 @@ public class ASM {
 			super.use.add(rs2);
 		}
 		public String toString() {
-			return String.format("\t%s %s, %s", opcode, rs1, rs2) + super.toString();
+			return String.format("\t%s %s, %s, %s", opcode, rs1, rs2, lbl.toString()) + super.toString();
 		}
 	}
 

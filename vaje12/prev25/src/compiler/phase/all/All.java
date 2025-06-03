@@ -17,7 +17,8 @@ public class All extends Phase{
     public Vector<AsmChunk> koda;
     public AsmChunk data;
     public ASM.Register[] allRegisters;
-    public All(String fileName, Vector<ASM.AsmChunk> koda, ASM.AsmChunk data, ASM.Register[] all){
+    public RegAll rgInstance;
+    public All(String fileName, Vector<ASM.AsmChunk> koda, ASM.AsmChunk data, ASM.Register[] all, RegAll rg){
         super("all");
         allRegisters = all;
         f = new File(fileName+".asm");
@@ -66,7 +67,7 @@ public class All extends Phase{
                 return z2;
             }
         }
-        z2.addLine(new ASM.MathOperationWithReg("add", ASM.a0, ASM.zero, trenutnaFunkcija.retReg));
+            //z2.addLine(new ASM.MathOperationWithReg("add", ASM.a0, ASM.zero, rgInstance.allRegisters[rgInstance.tempToReg.get(trenutnaFunkcija.frameOfCode.RV)]));
         for(int i=1; i<32; i++){
             z2.addLine(new RegisterAndOffset("ld", allRegisters[i], ASM.sp, -i*8-trenutnaFunkcija.tmpSize));
         }
