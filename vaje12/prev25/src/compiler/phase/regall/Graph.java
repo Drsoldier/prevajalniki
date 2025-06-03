@@ -1,8 +1,13 @@
 package compiler.phase.regall;
 
 import compiler.phase.asmgen.*;
+import compiler.phase.asmgen.ASM.Register;
+import compiler.phase.livean.LiveAn;
+import compiler.phase.memory.MEM;
+
 import java.util.HashSet;
 import java.util.HashMap;
+import java.util.*;
 
 public class Graph {
 
@@ -13,6 +18,31 @@ public class Graph {
         nodes = new HashSet<Node>();
         temporaryMappings = new HashMap<ASM.Register, Node>();
     }
+    public Graph(ASM.AsmChunk code) {
+            this();
+            new LiveAn().livean(code);
+
+            for (ASM.Line line : code.lines) {
+                if(line instanceof ASM.Instr instruction){
+
+                    this.addNode(instruction.use);
+                    this.addNode(instruction.def);
+                }
+            }
+
+            for (ASM.Line line : code.lines) {
+                if(line instanceof ASM.Instr instruction){
+
+                    for (Register definedTemporary : instruction.def) {
+                        for (Register outTemporary : instruction.out) {
+                            this.addEdge(definedTemporary, outTemporary);
+                        }
+                    }
+                }
+            }
+
+            this.removeNode(new Register(code.frameOfCode.FP));
+        }
 
     public void clear() {
         this.temporaryMappings.clear();
@@ -21,6 +51,19 @@ public class Graph {
 
     public Node getNode(ASM.Register temporary) {
         return this.temporaryMappings.get(temporary);
+    }
+
+    public Vector<ASM.Register> addNode(Vector<ASM.Register> temporary) {
+        for(ASM.Register reg : temporary){
+            Node existingNode = this.getNode(reg);
+            if (existingNode != null)
+                return temporary;
+
+            Node node = new Node(reg);
+            this.nodes.add(node);
+            this.temporaryMappings.put(reg, node);
+        }
+        return temporary;
     }
 
     public Node addNode(ASM.Register temporary) {
