@@ -25,6 +25,7 @@ public class ASM {
 	public static final Register t2 = new Register("t2"); // x7
 	public static final Register fp = new Register("sp"); // x8 fp
 	public static final Register a0 = new Register("a0"); // x10
+	public static final Register s0 = fp;
 
 
 	public static class AsmChunk {
@@ -120,7 +121,7 @@ public class ASM {
 			super(y);
 		}
 		public String toString() {
-            return super.toString() + ":";
+            return super.toString() + "";
 		}
 	}
 

@@ -14,7 +14,16 @@ public class LiveAn extends Phase{
     public static Vector<ASM.AsmChunk> koda;
     static Vector<ASM.Register> alrDefinedReg;
 
-    
+    public LiveAn(){
+        super("livean");
+        alrDefinedReg = new Vector<>();
+        alrDefinedReg.add(ASM.zero);
+        alrDefinedReg.add(ASM.retaddr);
+        alrDefinedReg.add(ASM.sp);
+        alrDefinedReg.add(ASM.t2);
+        alrDefinedReg.add(ASM.gp);
+    }
+
     public LiveAn(Vector<ASM.AsmChunk> koda){
         super("livean");
         this.koda = koda;
@@ -35,10 +44,10 @@ public class LiveAn extends Phase{
     }
 
 
-    public static Vector<ASM.AsmChunk> performLiveAn(){
+    public Vector<ASM.AsmChunk> performLiveAn(){
         Vector<ASM.AsmChunk> return2 = new Vector<>();
         for(var x : koda){
-            return2.add(livean(x));
+            return2.add(this.livean(x));
         }
         return return2;
     }
@@ -110,7 +119,7 @@ public class LiveAn extends Phase{
     }
 
 
-    public static ASM.AsmChunk livean(ASM.AsmChunk chunk) {
+    public ASM.AsmChunk livean(ASM.AsmChunk chunk) {
         Map<ASM.Instr, Set<ASM.Register>> in = new HashMap<>();
         Map<ASM.Instr, Set<ASM.Register>> out = new HashMap<>();
         Map<String, ASM.Instr> labelToInstr = new HashMap<>();

@@ -131,6 +131,8 @@ public class RegAll extends Phase{
         return neki;
     }
 
+
+    
     // is the graph able to be simplified
     public boolean simplify(Graph ig, Stack<Node> stack){
         for (Node node : ig.nodes()){
@@ -273,90 +275,44 @@ public class RegAll extends Phase{
     }
 
 
-    public void allocate(){
-        for (AsmChunk code : vseFunkcije){
-            boolean coloringFound = false;
-            int i = 0;
+     public void allocate(){
+        
+        for (ASM.AsmChunk code : vseFunkcije) {
+            boolean coloringFound        = false;
             Graph reconstructedGraph = null;
-            /*for(ASM.Line x : code.lines){
-                if(x instanceof ASM.Instr z){
-                    for(ASM.Register regInOut : z.out){
-                        firstUse.putIfAbsent(regInOut, i);
-                        lastUse.put(regInOut, i);
-                    }
-                }
-                i++;
-            }*/
-
-			/*
-			do {
-				
-				// STEP 1: BUILD INTERFERENCE GRAPH
-				Graph interferenceGraph = this.build(code);
-				HashMap<Node, HashSet<Node>> edges = interferenceGraph.edges();
-				System.out.println("Graph:\n"+interferenceGraph.toString()+"\n");
-				Stack<Node> stack = new Stack<Node>();
-				do {
-					// STEP 2: PERFORM ONE STEP OF SIMPLIFICATION
-					boolean hasChanged;
-					do {
-						hasChanged = this.simplify(interferenceGraph, stack);
-					} while (hasChanged);
-
-					// STEP 3: SPILL
-					Node removedNode = this.spill(interferenceGraph, stack);
-				} while (!interferenceGraph.isEmpty());
-
-				// STEP 4: SELECT - GRAPH COLORING
-				reconstructedGraph = new Graph();
-				Vector<Register> spills = this.select(reconstructedGraph, edges, stack);
-				coloringFound = spills.size() == 0;
-                System.out.println("found smth");
-				if (coloringFound)
-					break;
-				
-				// Coloring has not yet been found, the code must be modified
-				// STEP 5: MODIFY THE CODE
-                System.out.println("IM ABOUT TO SPILL!!!!");
-                modify(code, spills);
-
-                //throw new Report.Error("Could not allocate necessary registers with original code");
-
-			} while (!coloringFound);*/
-
-
-            while(!coloringFound){
-                Graph interferenceGraph = build(code);
+            int i = 0;
+            while (!coloringFound) {
+                Graph interferenceGraph = new Graph(code);
                 HashMap<Node, HashSet<Node>> edges = interferenceGraph.edges();
-                Stack<Node> stack = new Stack<>();
+                Stack<Node> stack                      = new Stack<>();
                 do {
-                    while (simplify(interferenceGraph, stack)) {}
+                    while (simplify(interferenceGraph,stack)) {}
                     this.spill(interferenceGraph, stack);
                 } while (!interferenceGraph.isEmpty());
 
                 reconstructedGraph = new Graph();
                 Vector<Register> spills = this.select(reconstructedGraph, edges, stack);
-                //coloringFound = spills.size() == 0;
-                if(coloringFound || !coloringFound)
+                coloringFound = spills.size() == 0;
+
+                if (coloringFound) {
                     break;
-                //this.modify(code, spills);
+                }
+
+                //this.modifyCode(code, spills);
             }
-            this.tempToReg.put(ASM.fp, 8);
+
+            this.tempToReg.put(new Register(code.frameOfCode.FP), 8);
             for (Node node : reconstructedGraph.nodes()) {
-                this.tempToReg.putIfAbsent(node.temporary, node.color);
+                this.tempToReg.put(node.temporary, node.color);
             }
+
             var vals = this.tempToReg.values();
-            for(int reg : vals){
-                if(reg > highestRegister){
+            for (int reg : vals) {
+                if (reg > highestRegister) {
                     highestRegister = reg;
                 }
             }
-
-			// After coloring has been found, actually use register numbers to
-			// assign registers. The frame pointer was not present in the graph
-			// and is precolored to value 253.
-			//this.tempToReg.put(new Register(code.frameOfCode.FP), 253);
-			System.out.println("FUCK");
+            System.out.println("FUCK");
             for (Node node : reconstructedGraph.nodes()) {
                 System.out.println(node.toString() + " " + node.color);
 				this.tempToReg.putIfAbsent(node.temporary, node.color);

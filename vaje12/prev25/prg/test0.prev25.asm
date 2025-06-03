@@ -35,9 +35,9 @@ _main:
 
 L0:
 	li x5, 1
-	add a0, zero, x5
-	jal zero, L1
-	jal zero, L1
+	add x5, x5, x5
+	jal x5, L1
+	jal x5, L1
 L1:
 	ret
 

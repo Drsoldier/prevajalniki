@@ -280,8 +280,8 @@ public class Compiler {
 				}
 				if(cmdLineOptValues.get("--target-phase").equals("regall"))
 					break;
-					All all = new All(cmdLineOptValues.get("--src-file-name"), koda, data, x2, regInstance);
-					all.printTheThing();
+				All all = new All(cmdLineOptValues.get("--src-file-name"), koda, data, x2, regInstance);
+				all.printTheThing();
 				/*try(){
 					System.out.println("printed out the thing");
 				}catch(Exception e){
