@@ -141,7 +141,7 @@ public class ASM {
 		public String toString(){
 			if(in != null && out != null){
 
-				return String.format("\t\n\tIN:%s\n\tOUT:%s\n\tUSE:%s\n\tDEF:%s\n", in.toString(), out.toString(), use.toString(), def.toString());
+				//return String.format("\t\n\tIN:%s\n\tOUT:%s\n\tUSE:%s\n\tDEF:%s\n", in.toString(), out.toString(), use.toString(), def.toString());
 			}
 			return "";
 		}

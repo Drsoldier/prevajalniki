@@ -7,7 +7,7 @@ _main:
 	sd x5, -40(sp)
 	sd x6, -48(sp)
 	sd x7, -56(sp)
-	sd fp, -64(sp)
+	sd sp, -64(sp)
 	sd x9, -72(sp)
 	sd a0, -80(sp)
 	sd x11, -88(sp)

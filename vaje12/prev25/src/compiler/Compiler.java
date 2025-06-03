@@ -268,6 +268,7 @@ public class Compiler {
 				if(cmdLineOptValues.get("--target-phase").equals("livan"))
 					break;
 				int z = Integer.valueOf((cmdLineOptValues.get("--num-regs")==null ? Integer.toString(27) : (cmdLineOptValues.get("--num-regs"))));
+				RegAll regInstance = null;
 				try (RegAll x = new RegAll()){
 					System.out.println("#####Doing register allocation#####");
 					x.vseFunkcije = koda;
@@ -275,10 +276,11 @@ public class Compiler {
 					koda=x.vseFunkcije;
 					x.log2();
 					x2 = x.allRegisters;
+					regInstance = x;
 				}
 				if(cmdLineOptValues.get("--target-phase").equals("regall"))
 					break;
-					All all = new All(cmdLineOptValues.get("--src-file-name"), koda, data, x2);
+					All all = new All(cmdLineOptValues.get("--src-file-name"), koda, data, x2, regInstance);
 					all.printTheThing();
 				/*try(){
 					System.out.println("printed out the thing");
