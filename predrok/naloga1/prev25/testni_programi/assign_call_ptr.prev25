@@ -1,0 +1,7 @@
+var m : int
+
+fun ptr() : ^int =
+    return ^m
+
+fun main(): int =
+    return m-5

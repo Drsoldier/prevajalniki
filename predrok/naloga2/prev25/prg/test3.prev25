@@ -1,0 +1,29 @@
+typ d = char
+var s : < x : int, c : char >
+
+
+fun main() : int = 
+    let 
+        var x : int
+        var c : ^char
+    in
+        1+1,
+        return k(0)+1
+    end
+
+fun k(o : int): int =
+    return o + 1
+
+
+fun abc(t : int, p : int, o : int) : int =
+    return t + p + o
+
+fun kkk() : int =
+    let
+        var x : int
+        var y : int
+    in
+        x = 1,
+        y = 1,
+        return x + 1
+    end

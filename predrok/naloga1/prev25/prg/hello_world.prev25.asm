@@ -1,0 +1,316 @@
+.data
+.text
+li sp 0x000000007ffffff0
+li s0 0x000000007ffffff0
+li gp 0x0000000010000000
+call _main
+mv a1 a0
+li a0 0  
+# exitli a7 93 
+# exitecall    
+# exit# Begin stdlib ===========================
+_new:
+	ld a0 8(sp)
+	sd gp 8(sp)
+	add gp gp a0
+	ld a0 8(sp)
+	ret
+
+_del:	ret
+
+putchar:
+	 	sd ra, -8(sp)
+	 	sd sp, -16(sp)
+	 	sd gp, -24(sp)
+	 	sd x4, -32(sp)
+	 	sd x5, -40(sp)
+	 	sd x6, -48(sp)
+	 	sd x7, -56(sp)
+	 	sd sp, -64(sp)
+	 	sd x9, -72(sp)
+	 	sd a0, -80(sp)
+	 	sd x11, -88(sp)
+	 	sd x12, -96(sp)
+	 	sd x13, -104(sp)
+	 	sd x14, -112(sp)
+	 	sd x15, -120(sp)
+	 	sd x16, -128(sp)
+	 	sd a7, -136(sp)
+	 	sd x18, -144(sp)
+	 	sd x19, -152(sp)
+	 	sd x20, -160(sp)
+	 	sd x21, -168(sp)
+	 	sd x22, -176(sp)
+	 	sd x23, -184(sp)
+	 	sd x24, -192(sp)
+	 	sd x25, -200(sp)
+	 	sd x26, -208(sp)
+	 	sd x27, -216(sp)
+	 	sd x28, -224(sp)
+	 	sd x29, -232(sp)
+	 	sd x30, -240(sp)
+	 	sd x31, -248(sp)
+L7:
+	 	ld a0, 8(sp)
+	 	li a7, 11
+	 ecall
+	 	ld ra, -8(sp)
+	 	ld sp, -16(sp)
+	 	ld gp, -24(sp)
+	 	ld x4, -32(sp)
+	 	ld x5, -40(sp)
+	 	ld x6, -48(sp)
+	 	ld x7, -56(sp)
+	 	ld sp, -64(sp)
+	 	ld x9, -72(sp)
+	 	ld a0, -80(sp)
+	 	ld x11, -88(sp)
+	 	ld x12, -96(sp)
+	 	ld x13, -104(sp)
+	 	ld x14, -112(sp)
+	 	ld x15, -120(sp)
+	 	ld x16, -128(sp)
+	 	ld a7, -136(sp)
+	 	ld x18, -144(sp)
+	 	ld x19, -152(sp)
+	 	ld x20, -160(sp)
+	 	ld x21, -168(sp)
+	 	ld x22, -176(sp)
+	 	ld x23, -184(sp)
+	 	ld x24, -192(sp)
+	 	ld x25, -200(sp)
+	 	ld x26, -208(sp)
+	 	ld x27, -216(sp)
+	 	ld x28, -224(sp)
+	 	ld x29, -232(sp)
+	 	ld x30, -240(sp)
+	 	ld x31, -248(sp)
+putint:
+	 	sd ra, -8(sp)
+	 	sd sp, -16(sp)
+	 	sd gp, -24(sp)
+	 	sd x4, -32(sp)
+	 	sd x5, -40(sp)
+	 	sd x6, -48(sp)
+	 	sd x7, -56(sp)
+	 	sd sp, -64(sp)
+	 	sd x9, -72(sp)
+	 	sd a0, -80(sp)
+	 	sd x11, -88(sp)
+	 	sd x12, -96(sp)
+	 	sd x13, -104(sp)
+	 	sd x14, -112(sp)
+	 	sd x15, -120(sp)
+	 	sd x16, -128(sp)
+	 	sd a7, -136(sp)
+	 	sd x18, -144(sp)
+	 	sd x19, -152(sp)
+	 	sd x20, -160(sp)
+	 	sd x21, -168(sp)
+	 	sd x22, -176(sp)
+	 	sd x23, -184(sp)
+	 	sd x24, -192(sp)
+	 	sd x25, -200(sp)
+	 	sd x26, -208(sp)
+	 	sd x27, -216(sp)
+	 	sd x28, -224(sp)
+	 	sd x29, -232(sp)
+	 	sd x30, -240(sp)
+	 	sd x31, -248(sp)
+L9:
+	 	ld a0, 8(sp)
+	 	li a7, 1
+	 ecall
+	 	ld ra, -8(sp)
+	 	ld sp, -16(sp)
+	 	ld gp, -24(sp)
+	 	ld x4, -32(sp)
+	 	ld x5, -40(sp)
+	 	ld x6, -48(sp)
+	 	ld x7, -56(sp)
+	 	ld sp, -64(sp)
+	 	ld x9, -72(sp)
+	 	ld a0, -80(sp)
+	 	ld x11, -88(sp)
+	 	ld x12, -96(sp)
+	 	ld x13, -104(sp)
+	 	ld x14, -112(sp)
+	 	ld x15, -120(sp)
+	 	ld x16, -128(sp)
+	 	ld a7, -136(sp)
+	 	ld x18, -144(sp)
+	 	ld x19, -152(sp)
+	 	ld x20, -160(sp)
+	 	ld x21, -168(sp)
+	 	ld x22, -176(sp)
+	 	ld x23, -184(sp)
+	 	ld x24, -192(sp)
+	 	ld x25, -200(sp)
+	 	ld x26, -208(sp)
+	 	ld x27, -216(sp)
+	 	ld x28, -224(sp)
+	 	ld x29, -232(sp)
+	 	ld x30, -240(sp)
+	 	ld x31, -248(sp)
+puts:
+	 	sd ra, -8(sp)
+	 	sd sp, -16(sp)
+	 	sd gp, -24(sp)
+	 	sd x4, -32(sp)
+	 	sd x5, -40(sp)
+	 	sd x6, -48(sp)
+	 	sd x7, -56(sp)
+	 	sd sp, -64(sp)
+	 	sd x9, -72(sp)
+	 	sd a0, -80(sp)
+	 	sd x11, -88(sp)
+	 	sd x12, -96(sp)
+	 	sd x13, -104(sp)
+	 	sd x14, -112(sp)
+	 	sd x15, -120(sp)
+	 	sd x16, -128(sp)
+	 	sd a7, -136(sp)
+	 	sd x18, -144(sp)
+	 	sd x19, -152(sp)
+	 	sd x20, -160(sp)
+	 	sd x21, -168(sp)
+	 	sd x22, -176(sp)
+	 	sd x23, -184(sp)
+	 	sd x24, -192(sp)
+	 	sd x25, -200(sp)
+	 	sd x26, -208(sp)
+	 	sd x27, -216(sp)
+	 	sd x28, -224(sp)
+	 	sd x29, -232(sp)
+	 	sd x30, -240(sp)
+	 	sd x31, -248(sp)
+L11:
+	 	ld a0, 8(sp)
+	 	li a7, 4
+	 ecall
+	 	ld ra, -8(sp)
+	 	ld sp, -16(sp)
+	 	ld gp, -24(sp)
+	 	ld x4, -32(sp)
+	 	ld x5, -40(sp)
+	 	ld x6, -48(sp)
+	 	ld x7, -56(sp)
+	 	ld sp, -64(sp)
+	 	ld x9, -72(sp)
+	 	ld a0, -80(sp)
+	 	ld x11, -88(sp)
+	 	ld x12, -96(sp)
+	 	ld x13, -104(sp)
+	 	ld x14, -112(sp)
+	 	ld x15, -120(sp)
+	 	ld x16, -128(sp)
+	 	ld a7, -136(sp)
+	 	ld x18, -144(sp)
+	 	ld x19, -152(sp)
+	 	ld x20, -160(sp)
+	 	ld x21, -168(sp)
+	 	ld x22, -176(sp)
+	 	ld x23, -184(sp)
+	 	ld x24, -192(sp)
+	 	ld x25, -200(sp)
+	 	ld x26, -208(sp)
+	 	ld x27, -216(sp)
+	 	ld x28, -224(sp)
+	 	ld x29, -232(sp)
+	 	ld x30, -240(sp)
+	 	ld x31, -248(sp)
+# End stdlib =============================
+#Prologue
+_main:
+	sd ra, -16(sp)
+	sd sp, -24(sp)
+	sd gp, -32(sp)
+	sd x4, -40(sp)
+	sd x5, -48(sp)
+	sd x6, -56(sp)
+	sd x7, -64(sp)
+	sd sp, -72(sp)
+	sd x9, -80(sp)
+	sd a0, -88(sp)
+	sd x11, -96(sp)
+	sd x12, -104(sp)
+	sd x13, -112(sp)
+	sd x14, -120(sp)
+	sd x15, -128(sp)
+	sd x16, -136(sp)
+	sd a7, -144(sp)
+	sd x18, -152(sp)
+	sd x19, -160(sp)
+	sd x20, -168(sp)
+	sd x21, -176(sp)
+	sd x22, -184(sp)
+	sd x23, -192(sp)
+	sd x24, -200(sp)
+	sd x25, -208(sp)
+	sd x26, -216(sp)
+	sd x27, -224(sp)
+	sd x28, -232(sp)
+	sd x29, -240(sp)
+	sd x30, -248(sp)
+	sd x31, -256(sp)
+#######_main#####
+
+L0
+	add x5, zero, x6
+	li x5, -8
+	add x6, x5, x5
+	add x6, zero, x5
+	li x5, 0
+	sd x5, 0(x6)
+L2
+	add x5, zero, x6
+	li x5, -8
+	add x5, x6, x6
+	ld x6, 0(x5)
+	li x5, 9
+	blt x5, x5, L4
+	beq x5, x5, L4
+	jal zero, L6
+L6
+	jal zero, L5
+L4
+	ld x5, 0(x6)
+	add x6, zero, x5
+	li x5, -8
+	add x6, x5, x5
+	ld x5, 0(x6)
+	sd x5, 0(sp)
+	addi sp, sp, -8
+	sd x5, 0(sp)
+	addi sp, sp, -8
+#fixing sp
+	addi sp, zero, -8
+	addi sp, zero, -8
+#fixed sp
+	jal zero, _putint
+#outside function
+
+	add x6, zero, x5
+	li x5, -8
+	add x5, x6, x6
+	add x6, zero, x5
+	add x6, zero, x5
+	li x5, -8
+	add x6, x5, x5
+	ld x6, 0(x5)
+	add x5, zero, x6
+	li x5, 1
+	add x6, x5, x5
+	add x5, zero, x6
+	sd x5, 0(x6)
+	jal zero, L2
+L5
+	li x5, 0
+	add a0, zero, x5
+	jal zero, L1
+	jal zero, L1
+L1
+	ret
+
+
+#-----End of the main function-----

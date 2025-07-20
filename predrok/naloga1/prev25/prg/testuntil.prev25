@@ -1,0 +1,12 @@
+fun putint(a:int) : void
+fun main() : int =
+    let
+        var x : int
+    in
+        x = 0,
+        until (x<5) do
+            x = x + 1,
+            putint(x)
+        end,
+        return x
+    end
