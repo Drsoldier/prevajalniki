@@ -1,0 +1,2 @@
+typ b = int
+typ a = < tmp : ^b >

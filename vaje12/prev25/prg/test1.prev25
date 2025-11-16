@@ -1,0 +1,28 @@
+
+var o : int
+fun idi(p : int) : int =
+    p = p + 1,
+    return p + 1
+
+fun problem(y : int) : int = 
+    return 3*y
+
+
+fun main() : int =
+    let var x : int
+    in x = idi(problem(2)), return x end
+
+
+fun fff() : void =
+    let
+        fun xxx() : int =
+            let
+            fun zzz() : int =
+                return 6
+            in
+            o = zzz(),
+            return o
+            end
+    in 
+    return xxx()
+    end    

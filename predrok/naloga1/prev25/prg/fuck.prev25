@@ -1,0 +1,5 @@
+fun putint(a:int) : void
+fun main() : int =
+    putint(4),
+    return 4
+    
